@@ -1,0 +1,104 @@
+<StructureMap xmlns="http://hl7.org/fhir">
+   <id value="tutorial"/>
+   <text>
+      <status value="generated"/>
+      <div xmlns="http://www.w3.org/1999/xhtml">
+         <pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step13&quot;
+/// name = &quot;tutorial&quot;
+/// title = &quot;null&quot;
+/// status = &quot;draft&quot;
+
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left-13&quot; alias TLeft as source
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right-13&quot; alias TRight as target
+uses &quot;http://hl7.org/fhir/StructureDefinition/Basic&quot; alias Basic as target
+
+group tutorial(source src : TLeft, target tgt : TRight) {
+  src.f1 as s_f1 -&gt;  tgt.f2 = create(&apos;Basic&apos;) as rr,  tgt.ptr = reference(rr) then {
+    s_f1 -&gt;  rr.code as code,  code.text = s_f1 &quot;rule_s_f1&quot;;
+  } &quot;rule_ptr&quot;;
+}
+
+</pre>
+      </div>
+   </text>
+   <url value="http://hl7.org/fhir/StructureMap/tutorial-step13"/>
+   <name value="tutorial"/>
+   <status value="draft"/>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/tutorial-left-13"/>
+      <mode value="source"/>
+      <alias value="TLeft"/>
+   </structure>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/tutorial-right-13"/>
+      <mode value="target"/>
+      <alias value="TRight"/>
+   </structure>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/Basic"/>
+      <mode value="target"/>
+      <alias value="Basic"/>
+   </structure>
+   <group>
+      <name value="tutorial"/>
+      <typeMode value="none"/>
+      <input>
+         <name value="src"/>
+         <type value="TLeft"/>
+         <mode value="source"/>
+      </input>
+      <input>
+         <name value="tgt"/>
+         <type value="TRight"/>
+         <mode value="target"/>
+      </input>
+      <rule>
+         <name value="rule_ptr"/>
+         <source>
+            <context value="src"/>
+            <element value="f1"/>
+            <variable value="s_f1"/>
+         </source>
+         <target>
+            <context value="tgt"/>
+            <contextType value="variable"/>
+            <element value="f2"/>
+            <variable value="rr"/>
+            <transform value="create"/>
+            <parameter>
+               <valueString value="Basic"/>
+            </parameter>
+         </target>
+         <target>
+            <context value="tgt"/>
+            <contextType value="variable"/>
+            <element value="ptr"/>
+            <transform value="reference"/>
+            <parameter>
+               <valueId value="rr"/>
+            </parameter>
+         </target>
+         <rule>
+            <name value="rule_s_f1"/>
+            <source>
+               <context value="s_f1"/>
+            </source>
+            <target>
+               <context value="rr"/>
+               <contextType value="variable"/>
+               <element value="code"/>
+               <variable value="code"/>
+            </target>
+            <target>
+               <context value="code"/>
+               <contextType value="variable"/>
+               <element value="text"/>
+               <transform value="copy"/>
+               <parameter>
+                  <valueId value="s_f1"/>
+               </parameter>
+            </target>
+         </rule>
+      </rule>
+   </group>
+</StructureMap>

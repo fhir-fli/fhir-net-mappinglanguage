@@ -1,0 +1,111 @@
+<StructureMap xmlns="http://hl7.org/fhir">
+   <id value="tutorial"/>
+   <text>
+      <status value="generated"/>
+      <div xmlns="http://www.w3.org/1999/xhtml">
+         <pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step12&quot;
+/// name = &quot;tutorial&quot;
+/// title = &quot;null&quot;
+/// status = &quot;draft&quot;
+
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left-12&quot; alias TLeft as source
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right-12&quot; alias TRight as target
+
+group tutorial(source src : TLeft, target tgt : TRight) {
+  // setting up a variable for the parent
+  src.az1 as s_az1 then {
+    // one tgt.az1 for each az3
+    s_az1.az3 as s_az3 -&gt; tgt.az1 as t_az1 then {
+      // value for az2. Note that this refers to a previous context in the source
+      s_az1.az2 as az2 -&gt; t_az1.az2 = az2 &quot;rule_az2&quot;;
+      // value for az3
+      s_az3 -&gt; t_az1.az3 = s_az3 &quot;rule_az3&quot;;
+    } &quot;rule_taz1&quot;;
+  } &quot;rule_saz1&quot;;
+}
+
+</pre>
+      </div>
+   </text>
+   <url value="http://hl7.org/fhir/StructureMap/tutorial-step12"/>
+   <name value="tutorial"/>
+   <status value="draft"/>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/tutorial-left-12"/>
+      <mode value="source"/>
+      <alias value="TLeft"/>
+   </structure>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/tutorial-right-12"/>
+      <mode value="target"/>
+      <alias value="TRight"/>
+   </structure>
+   <group>
+      <name value="tutorial"/>
+      <typeMode value="none"/>
+      <input>
+         <name value="src"/>
+         <type value="TLeft"/>
+         <mode value="source"/>
+      </input>
+      <input>
+         <name value="tgt"/>
+         <type value="TRight"/>
+         <mode value="target"/>
+      </input>
+      <rule>
+         <name value="rule_saz1"/>
+         <source>
+            <context value="src"/>
+            <element value="az1"/>
+            <variable value="s_az1"/>
+         </source>
+         <rule>
+            <name value="rule_taz1"/>
+            <source>
+               <context value="s_az1"/>
+               <element value="az3"/>
+               <variable value="s_az3"/>
+            </source>
+            <target>
+               <context value="tgt"/>
+               <contextType value="variable"/>
+               <element value="az1"/>
+               <variable value="t_az1"/>
+            </target>
+            <rule>
+               <name value="rule_az2"/>
+               <source>
+                  <context value="s_az1"/>
+                  <element value="az2"/>
+                  <variable value="az2"/>
+               </source>
+               <target>
+                  <context value="t_az1"/>
+                  <contextType value="variable"/>
+                  <element value="az2"/>
+                  <transform value="copy"/>
+                  <parameter>
+                     <valueId value="az2"/>
+                  </parameter>
+               </target>
+            </rule>
+            <rule>
+               <name value="rule_az3"/>
+               <source>
+                  <context value="s_az3"/>
+               </source>
+               <target>
+                  <context value="t_az1"/>
+                  <contextType value="variable"/>
+                  <element value="az3"/>
+                  <transform value="copy"/>
+                  <parameter>
+                     <valueId value="s_az3"/>
+                  </parameter>
+               </target>
+            </rule>
+         </rule>
+      </rule>
+   </group>
+</StructureMap>

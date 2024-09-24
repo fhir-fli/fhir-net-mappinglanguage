@@ -1,0 +1,53 @@
+{
+  "resourceType": "StructureMap",
+  "id": "tutorial-step3c",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step3c&quot;\r\n/// name = &quot;tutorial-step3c&quot;\r\n/// title = &quot;Tutorial Step 3c&quot;\r\n/// status = &quot;draft&quot;\r\n\r\n// Tutorial Step 3c\r\n\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left&quot; alias TLeft as source\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right&quot; alias TRight as target\r\n\r\ngroup tutorial(source src : TLeft, target tgt : TRight) {\r\n  src.a2 as a check a2.length() &lt;= 20 -&gt; tgt.a2 = a &quot;rule_a20c&quot;;\r\n}\r\n\r\n</pre></div>"
+  },
+  "url": "http://hl7.org/fhir/StructureMap/tutorial-step3c",
+  "name": "tutorial-step3c",
+  "title": "Tutorial Step 3c",
+  "status": "draft",
+  "description": "Tutorial Step 3c",
+  "structure": [ {
+    "url": "http://hl7.org/fhir/StructureDefinition/tutorial-left",
+    "mode": "source",
+    "alias": "TLeft"
+  }, {
+    "url": "http://hl7.org/fhir/StructureDefinition/tutorial-right",
+    "mode": "target",
+    "alias": "TRight"
+  } ],
+  "group": [ {
+    "name": "tutorial",
+    "typeMode": "none",
+    "input": [ {
+      "name": "src",
+      "type": "TLeft",
+      "mode": "source"
+    }, {
+      "name": "tgt",
+      "type": "TRight",
+      "mode": "target"
+    } ],
+    "rule": [ {
+      "name": "rule_a20c",
+      "source": [ {
+        "context": "src",
+        "element": "a2",
+        "variable": "a",
+        "check": "a2.length() <= 20"
+      } ],
+      "target": [ {
+        "context": "tgt",
+        "contextType": "variable",
+        "element": "a2",
+        "transform": "copy",
+        "parameter": [ {
+          "valueId": "a"
+        } ]
+      } ]
+    } ]
+  } ]
+}

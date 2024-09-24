@@ -1,0 +1,76 @@
+{
+  "resourceType": "StructureMap",
+  "id": "tutorial",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step8&quot;\r\n/// name = &quot;tutorial&quot;\r\n/// title = &quot;null&quot;\r\n/// status = &quot;draft&quot;\r\n\r\nconceptmap &quot;tutorialmap&quot; {\r\n  prefix s = &quot;http://hl7.org/fhir/tutorial8/codeleft&quot;\r\n  prefix t = &quot;http://hl7.org/fhir/tutorial8/coderight&quot;\r\n\r\n  s:vonhier == t:&quot;nach-da&quot;\r\n  s:test == t:test\r\n}\r\n\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left-8&quot; alias TLeft as source\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right-8&quot; alias TRight as target\r\n\r\ngroup tutorial(source src : TLeft, target tgt : TRight) {\r\n  src.d as d -&gt; tgt.d = translate(d, '#tutorialmap', 'code') &quot;rule_d&quot;;\r\n}\r\n\r\n</pre></div>"
+  },
+  "contained": [ {
+    "resourceType": "ConceptMap",
+    "id": "tutorialmap",
+    "status": "draft",
+    "group": [ {
+      "source": "http://hl7.org/fhir/tutorial8/codeleft",
+      "target": "http://hl7.org/fhir/tutorial8/coderight",
+      "element": [ {
+        "code": "vonhier",
+        "target": [ {
+          "code": "nach-da",
+          "equivalence": "equivalent"
+        } ]
+      }, {
+        "code": "test",
+        "target": [ {
+          "code": "test",
+          "equivalence": "equivalent"
+        } ]
+      } ]
+    } ]
+  } ],
+  "url": "http://hl7.org/fhir/StructureMap/tutorial-step8",
+  "name": "tutorial",
+  "status": "draft",
+  "structure": [ {
+    "url": "http://hl7.org/fhir/StructureDefinition/tutorial-left-8",
+    "mode": "source",
+    "alias": "TLeft"
+  }, {
+    "url": "http://hl7.org/fhir/StructureDefinition/tutorial-right-8",
+    "mode": "target",
+    "alias": "TRight"
+  } ],
+  "group": [ {
+    "name": "tutorial",
+    "typeMode": "none",
+    "input": [ {
+      "name": "src",
+      "type": "TLeft",
+      "mode": "source"
+    }, {
+      "name": "tgt",
+      "type": "TRight",
+      "mode": "target"
+    } ],
+    "rule": [ {
+      "name": "rule_d",
+      "source": [ {
+        "context": "src",
+        "element": "d",
+        "variable": "d"
+      } ],
+      "target": [ {
+        "context": "tgt",
+        "contextType": "variable",
+        "element": "d",
+        "transform": "translate",
+        "parameter": [ {
+          "valueId": "d"
+        }, {
+          "valueString": "#tutorialmap"
+        }, {
+          "valueString": "code"
+        } ]
+      } ]
+    } ]
+  } ]
+}

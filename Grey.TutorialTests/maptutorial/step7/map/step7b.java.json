@@ -1,0 +1,79 @@
+{
+  "resourceType": "StructureMap",
+  "id": "tutorial",
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step7b&quot;\r\n/// name = &quot;tutorial&quot;\r\n/// title = &quot;null&quot;\r\n/// status = &quot;draft&quot;\r\n\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left-7&quot; alias TLeft as source\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right-7&quot; alias TRight as target\r\n\r\ngroup tutorial(source src : TLeft, target tgt : TRight) {\r\n  src.aa as s_aa -&gt; tgt.aa as t_aa then ab_content(s_aa, t_aa) &quot;rule_aa&quot;;\r\n}\r\n\r\ngroup ab_content(source src, target tgt) {\r\n  src.ab as ab -&gt; tgt.ab = ab &quot;rule_ab&quot;;\r\n}\r\n\r\n</pre></div>"
+  },
+  "url": "http://hl7.org/fhir/StructureMap/tutorial-step7b",
+  "name": "tutorial",
+  "status": "draft",
+  "structure": [ {
+    "url": "http://hl7.org/fhir/StructureDefinition/tutorial-left-7",
+    "mode": "source",
+    "alias": "TLeft"
+  }, {
+    "url": "http://hl7.org/fhir/StructureDefinition/tutorial-right-7",
+    "mode": "target",
+    "alias": "TRight"
+  } ],
+  "group": [ {
+    "name": "tutorial",
+    "typeMode": "none",
+    "input": [ {
+      "name": "src",
+      "type": "TLeft",
+      "mode": "source"
+    }, {
+      "name": "tgt",
+      "type": "TRight",
+      "mode": "target"
+    } ],
+    "rule": [ {
+      "name": "rule_aa",
+      "source": [ {
+        "context": "src",
+        "element": "aa",
+        "variable": "s_aa"
+      } ],
+      "target": [ {
+        "context": "tgt",
+        "contextType": "variable",
+        "element": "aa",
+        "variable": "t_aa"
+      } ],
+      "dependent": [ {
+        "name": "ab_content",
+        "variable": [ "s_aa", "t_aa" ]
+      } ]
+    } ]
+  }, {
+    "name": "ab_content",
+    "typeMode": "none",
+    "input": [ {
+      "name": "src",
+      "mode": "source"
+    }, {
+      "name": "tgt",
+      "mode": "target"
+    } ],
+    "rule": [ {
+      "name": "rule_ab",
+      "source": [ {
+        "context": "src",
+        "element": "ab",
+        "variable": "ab"
+      } ],
+      "target": [ {
+        "context": "tgt",
+        "contextType": "variable",
+        "element": "ab",
+        "transform": "copy",
+        "parameter": [ {
+          "valueId": "ab"
+        } ]
+      } ],
+      "documentation": "copy ab inside aa"
+    } ]
+  } ]
+}

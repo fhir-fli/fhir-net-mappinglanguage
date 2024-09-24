@@ -1,0 +1,71 @@
+<StructureMap xmlns="http://hl7.org/fhir">
+   <id value="tutorial-step6d"/>
+   <text>
+      <status value="generated"/>
+      <div xmlns="http://www.w3.org/1999/xhtml">
+         <pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step6d&quot;
+/// name = &quot;tutorial-step6d&quot;
+/// title = &quot;Tutorial Step 6d&quot;
+/// status = &quot;draft&quot;
+
+// Tutorial Step 6d
+
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left-6&quot; alias TLeft as source
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right-6&quot; alias TRight as target
+
+group tutorial(source src : TLeft, target tgt : TRight) {
+  src.a23 last as a -&gt; tgt.a23 = a &quot;rule_a23d_1&quot;;
+}
+
+</pre>
+      </div>
+   </text>
+   <url value="http://hl7.org/fhir/StructureMap/tutorial-step6d"/>
+   <name value="tutorial-step6d"/>
+   <title value="Tutorial Step 6d"/>
+   <status value="draft"/>
+   <description value="Tutorial Step 6d"/>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/tutorial-left-6"/>
+      <mode value="source"/>
+      <alias value="TLeft"/>
+   </structure>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/tutorial-right-6"/>
+      <mode value="target"/>
+      <alias value="TRight"/>
+   </structure>
+   <group>
+      <name value="tutorial"/>
+      <typeMode value="none"/>
+      <input>
+         <name value="src"/>
+         <type value="TLeft"/>
+         <mode value="source"/>
+      </input>
+      <input>
+         <name value="tgt"/>
+         <type value="TRight"/>
+         <mode value="target"/>
+      </input>
+      <rule>
+         <name value="rule_a23d_1"/>
+         <source>
+            <context value="src"/>
+            <element value="a23"/>
+            <listMode value="last"/>
+            <variable value="a"/>
+         </source>
+         <target>
+            <context value="tgt"/>
+            <contextType value="variable"/>
+            <element value="a23"/>
+            <transform value="copy"/>
+            <parameter>
+               <valueId value="a"/>
+            </parameter>
+         </target>
+         <documentation value="only use the last item in the list"/>
+      </rule>
+   </group>
+</StructureMap>
