@@ -43,12 +43,11 @@ namespace Grey.TutorialTests
                             string jsonFilePath = Path.ChangeExtension(xmlFile, ".json");
                             File.WriteAllText(jsonFilePath, jsonOutput);
 
-                            // Serialize to XML and save locally
+                            // Serialize to XML and overwrite the original file
                             string xmlOutput = xmlSerializer.SerializeToString(resource);
-                            string xmlFilePath = Path.ChangeExtension(xmlFile, ".xml.new");
-                            File.WriteAllText(xmlFilePath, xmlOutput);
+                            File.WriteAllText(xmlFile, xmlOutput); // Overwrite the original XML file
 
-                            Console.WriteLine($"Converted locally: {xmlFile} -> {jsonFilePath}, {xmlFilePath}");
+                            Console.WriteLine($"Converted locally: {xmlFile} -> {jsonFilePath}");
 
                             // *** Remote Conversion (using Matchbox API) ***
                             await ConvertWithMatchbox(httpClient, xmlContent, xmlFile, ".java.xml", "application/fhir+xml;fhirVersion=4.0");
