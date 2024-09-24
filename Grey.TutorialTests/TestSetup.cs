@@ -11,7 +11,7 @@ namespace Grey.TutorialTests
         {
             string baseDirectory = @"/home/grey/dev/fhir-net-mappinglanguage/Grey.TutorialTests/maptutorial";
             var xmlParser = new FhirXmlParser();
-            var jsonSerializer = new FhirJsonSerializer();
+            var jsonSerializer = new FhirJsonSerializer(new SerializerSettings() { Pretty = true }); // Enable pretty-printing
 
             // Iterate through step1 to step13 directories
             for (int step = 1; step <= 13; step++)
@@ -32,7 +32,7 @@ namespace Grey.TutorialTests
                             // Parse the XML to a FHIR resource
                             Resource resource = xmlParser.Parse<Resource>(xmlContent);
 
-                            // Serialize the resource to JSON
+                            // Serialize the resource to JSON with pretty-printing
                             string jsonOutput = jsonSerializer.SerializeToString(resource);
 
                             // Save the JSON to a new file (in the same directory)
