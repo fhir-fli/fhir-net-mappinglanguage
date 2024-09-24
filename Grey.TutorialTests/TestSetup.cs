@@ -5,11 +5,18 @@ namespace Grey.TutorialTests
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
+    using Hl7.Fhir.ElementModel;
+    using Hl7.Fhir.MappingLanguage;
+    using Hl7.Fhir.Model;
+    using Hl7.Fhir.Serialization;
 
     class Program
     {
+        private static FhirXmlSerializer _xmlSerializer = new FhirXmlSerializer(new SerializerSettings() { Pretty = true });
+        private static FhirJsonSerializer _jsonSerializer = new FhirJsonSerializer(new SerializerSettings() { Pretty = true });
+
         [STAThread]
-        static async Task Main() // Explicitly use System.Threading.Tasks.Task
+        static async System.Threading.Tasks.Task Main()
         {
             string baseDirectory = @"/home/grey/dev/fhir-net-mappinglanguage/Grey.TutorialTests/maptutorial";
             var httpClient = new HttpClient(); // HTTP client for Matchbox API requests
@@ -33,6 +40,9 @@ namespace Grey.TutorialTests
                             // *** Remote Conversion (using Matchbox API) ***
                             await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
                             await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
+
+                            // *** Local Conversion (using .NET StructureMapParser) ***
+                            ConvertWithDotNet(mapContent, mapFile);
                         }
                         catch (Exception ex)
                         {
@@ -47,8 +57,8 @@ namespace Grey.TutorialTests
             }
         }
 
-        // Function to handle remote conversion with Matchbox API
-        private static async Task ConvertWithMatchbox(HttpClient httpClient, string mapContent, string mapFilePath, string outputExtension, string acceptHeader)
+        // Function to handle remote conversion with Matchbox API (Java-based conversion)
+        private static async System.Threading.Tasks.Task ConvertWithMatchbox(HttpClient httpClient, string mapContent, string mapFilePath, string outputExtension, string acceptHeader)
         {
             try
             {
@@ -78,6 +88,57 @@ namespace Grey.TutorialTests
             catch (Exception ex)
             {
                 Console.WriteLine($"Error converting {mapFilePath} with Matchbox: {ex.Message}");
+            }
+        }
+
+        // Function to handle local conversion with .NET FHIR libraries (StructureMapUtilitiesParse)
+        private static void ConvertWithDotNet(string mapContent, string mapFilePath)
+        {
+            try
+            {
+                // Parse the .map file content to a StructureMap using the .NET FHIR library
+                var parser = new StructureMapUtilitiesParse();
+                var structureMap = parser.parse(mapContent, Path.GetFileNameWithoutExtension(mapFilePath)); // Map name from file
+
+                // Serialize to XML and JSON using .NET FHIR serializers
+                SerializeToXml(structureMap, mapFilePath);
+                SerializeToJson(structureMap, mapFilePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error converting {mapFilePath} locally using .NET: {ex.Message}");
+            }
+        }
+
+        // Function to serialize StructureMap to XML
+        private static void SerializeToXml(StructureMap structureMap, string mapFilePath)
+        {
+            try
+            {
+                string xmlOutput = _xmlSerializer.SerializeToString(structureMap); // Convert to XML
+                string outputFilePath = Path.ChangeExtension(mapFilePath, ".dotnet.xml"); // Change file extension to .dotnet.xml
+                File.WriteAllText(outputFilePath, xmlOutput); // Write the XML output to file
+                Console.WriteLine($"Serialized locally to XML: {outputFilePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error serializing {mapFilePath} to XML: {ex.Message}");
+            }
+        }
+
+        // Function to serialize StructureMap to JSON
+        private static void SerializeToJson(StructureMap structureMap, string mapFilePath)
+        {
+            try
+            {
+                string jsonOutput = _jsonSerializer.SerializeToString(structureMap); // Convert to JSON
+                string outputFilePath = Path.ChangeExtension(mapFilePath, ".dotnet.json"); // Change file extension to .dotnet.json
+                File.WriteAllText(outputFilePath, jsonOutput); // Write the JSON output to file
+                Console.WriteLine($"Serialized locally to JSON: {outputFilePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error serializing {mapFilePath} to JSON: {ex.Message}");
             }
         }
     }
