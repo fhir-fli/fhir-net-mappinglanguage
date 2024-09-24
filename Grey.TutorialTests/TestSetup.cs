@@ -42,7 +42,8 @@ namespace Grey.TutorialTests
                             await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
 
                             // *** Local Conversion (using .NET StructureMapParser) ***
-                            ConvertWithDotNet(mapContent, mapFile);
+                            // Could not get dotnet to convert if does not start with "map"
+                            // ConvertWithDotNet(mapContent, mapFile);
                         }
                         catch (Exception ex)
                         {

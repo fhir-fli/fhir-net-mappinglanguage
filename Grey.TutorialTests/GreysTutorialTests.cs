@@ -1,32 +1,127 @@
+// using System;
+// using System.IO;
+// using System.Linq;
+// using System.Threading.Tasks;
 // using Hl7.Fhir.ElementModel;
 // using Hl7.Fhir.MappingLanguage;
 // using Hl7.Fhir.Model;
-// using Hl7.Fhir.Rest;
 // using Hl7.Fhir.Serialization;
 // using Hl7.Fhir.Specification;
 // using Hl7.Fhir.Specification.Source;
-// using Microsoft.VisualStudio.TestTools.UnitTesting;
-// using System.IO;
 
-// namespace Test.FhirMappingLanguage
+// namespace Grey.TutorialTests
 // {
-//     [TestClass]
-//     public class GreysTutorialTests
+//     class Program
 //     {
-//         private FhirXmlSerializer _xmlSerializer = new FhirXmlSerializer(new SerializerSettings() { Pretty = true });
-//         private FhirXmlParser _xmlParser = new FhirXmlParser();
-//         private FhirJsonParser _jsonParser = new FhirJsonParser();
-//         const string mappingtutorial_folder = @"/home/grey/dev/fhir-net-mappinglanguage/Test.Hl7.Fhir.MappingLanguage/maptutorial";
+//         // Class-level fields
+//         private static FhirXmlParser _xmlParser = new FhirXmlParser();
+//         private static FhirJsonParser _jsonParser = new FhirJsonParser();
+//         private static FhirXmlSerializer _xmlSerializer = new FhirXmlSerializer(new SerializerSettings { Pretty = true });
+//         private static FhirJsonSerializer _jsonSerializer = new FhirJsonSerializer(new SerializerSettings { Pretty = true });
 
-//         internal static StructureMapUtilitiesAnalyze.IWorkerContext CreateWorker()
+//         static async Task Main()
 //         {
-//             var source = new CachedResolver(new MultiResolver(
-//                 new DirectorySource(@"/home/grey/temp/analyzetests"),
-//                 ZipSource.CreateValidationSource()
-//                 ));
+//             string baseDirectory = @"/home/grey/dev/fhir-net-mappinglanguage/Grey.TutorialTests/maptutorial";
+
+//             // Iterate through steps 1 to 13
+//             for (int step = 1; step <= 13; step++)
+//             {
+//                 string stepDirectory = Path.Combine(baseDirectory, $"step{step}");
+//                 string logicalDirectory = Path.Combine(stepDirectory, "logical");
+//                 string mapDirectory = Path.Combine(stepDirectory, "map");
+//                 string sourceDirectory = Path.Combine(stepDirectory, "source");
+//                 string resultDirectory = Path.Combine(stepDirectory, "result");
+
+//                 // Ensure the result directory exists
+//                 Directory.CreateDirectory(resultDirectory);
+
+//                 // Process XML files first, then JSON files
+//                 await ProcessFiles(logicalDirectory, mapDirectory, sourceDirectory, resultDirectory, true);  // XML files
+//                 await ProcessFiles(logicalDirectory, mapDirectory, sourceDirectory, resultDirectory, false); // JSON files
+//             }
+//         }
+
+//         private static async Task ProcessFiles(string logicalDirectory, string mapDirectory, string sourceDirectory, string resultDirectory, bool useXml)
+//         {
+//             // Load all StructureDefinitions from the logical directory
+//             IResourceResolver resolver = CreateResolver(logicalDirectory, useXml);
+//             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(resolver);
+
+//             // Initialize the FHIR parsers and serializers
+//             FhirXmlParser xmlParser = new FhirXmlParser();
+//             FhirJsonParser jsonParser = new FhirJsonParser();
+//             FhirXmlSerializer xmlSerializer = new FhirXmlSerializer(new SerializerSettings { Pretty = true });
+//             FhirJsonSerializer jsonSerializer = new FhirJsonSerializer(new SerializerSettings { Pretty = true });
+
+//             // Load all map files
+//             string[] mapFiles = Directory.GetFiles(mapDirectory, useXml ? "*.xml" : "*.json");
+//             foreach (string mapFile in mapFiles)
+//             {
+//                 // Parse the StructureMap
+//                 StructureMap structureMap = ParseStructureMap(mapFile, useXml);
+
+//                 // Load all source files
+//                 string[] sourceFiles = Directory.GetFiles(sourceDirectory, useXml ? "*.xml" : "*.json");
+//                 foreach (string sourceFile in sourceFiles)
+//                 {
+//                     // Parse the source resource
+//                     ITypedElement sourceElement = ParseSourceResource(sourceFile, provider, useXml);
+
+//                     // Prepare the target resource
+//                     string targetResourceType = GetTargetResourceType(structureMap);
+//                     var targetElement = ElementNode.Root(provider, targetResourceType);
+
+//                     // Create a worker context
+//                     var worker = new TestWorker(resolver);
+
+//                     // Execute the transformation
+//                     var engine = new StructureMapUtilitiesExecute(worker, null, provider);
+//                     try
+//                     {
+//                         engine.transform(null, sourceElement, structureMap, targetElement);
+
+//                         // Serialize the result to XML and JSON
+//                         string xmlResult = targetElement.ToXml(new FhirXmlSerializationSettings { Pretty = true });
+//                         string jsonResult = targetElement.ToJson(new FhirJsonSerializationSettings { Pretty = true });
+
+//                         // Write the results to the result directory
+//                         string sourceFileName = Path.GetFileNameWithoutExtension(sourceFile);
+//                         string mapFileName = Path.GetFileNameWithoutExtension(mapFile);
+//                         string resultBaseName = $"{sourceFileName}_using_{mapFileName}";
+
+//                         string xmlResultFile = Path.Combine(resultDirectory, $"{resultBaseName}.result.xml");
+//                         string jsonResultFile = Path.Combine(resultDirectory, $"{resultBaseName}.result.json");
+
+//                         File.WriteAllText(xmlResultFile, xmlResult);
+//                         File.WriteAllText(jsonResultFile, jsonResult);
+
+//                         Console.WriteLine($"Successfully transformed {sourceFileName} using {mapFileName}");
+//                     }
+//                     catch (Exception ex)
+//                     {
+//                         Console.WriteLine($"Error transforming {sourceFile} using {mapFile}: {ex.Message}");
+//                     }
+//                 }
+//             }
+//         }
+
+//         private static IResourceResolver CreateResolver(string logicalDirectory, bool useXml)
+//         {
+//             // Create a resolver that includes your custom definitions
+//             var settings = new DirectorySourceSettings
+//             {
+//                 IncludeSubDirectories = true,
+//                 Mask = useXml ? "*.xml" : "*.json"
+//             };
+//             var source = new DirectorySource(logicalDirectory, settings);
 //             source.Load += Source_Load;
-//             var worker = new TestWorker(source);
-//             return worker;
+
+//             var resolver = new CachedResolver(new MultiResolver(
+//                 source,
+//                 ZipSource.CreateValidationSource()
+//             ));
+
+//             return resolver;
 //         }
 
 //         private static void Source_Load(object sender, CachedResolver.LoadResourceEventArgs e)
@@ -42,194 +137,80 @@
 //             }
 //         }
 
-//         [TestMethod]
-//         public void Tutorial_Step1()
+//         private static StructureMap ParseStructureMap(string mapFile, bool useXml)
 //         {
-//             var parser = new StructureMapUtilitiesParse();
-
-//             // Updated paths to your map files
-//             var mapStep1 = System.IO.File.ReadAllText(@$"{mappingtutorial_folder}/step1/map/step1.map");
-//             var sm1 = parser.parse(mapStep1, "Step1");
-//             System.IO.File.WriteAllText(
-//                 @$"{mappingtutorial_folder}/step1/map/step1.xml.new",
-//                 _xmlSerializer.SerializeToString(sm1));
-
-//             var mapStep1b = System.IO.File.ReadAllText(@$"{mappingtutorial_folder}/step1/map/step1b.map");
-//             var sm1b = parser.parse(mapStep1b, "Step1b");
-//             System.IO.File.WriteAllText(
-//                 @$"{mappingtutorial_folder}/step1/map/step1b.xml.new",
-//                 _xmlSerializer.SerializeToString(sm1b));
-
-//             var source1 = System.IO.File.ReadAllText(@$"{mappingtutorial_folder}/step1/source/source.json");
-//             var sourceNode = FhirJsonNode.Parse(source1);
-
-//             var source = new CachedResolver(new MultiResolver(
-//                new DirectorySource(@$"{mappingtutorial_folder}/step1/logical"),
-//                ZipSource.CreateValidationSource()
-//                ));
-//             source.Load += Source_Load;
-//             var worker = new TestWorker(source);
-
-//             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
-//                 source,
-//                 (string name, out string canonical) =>
-//                 {
-//                     switch (name)
-//                     {
-//                         case "TLeft1":
-//                             canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left1";
-//                             return true;
-//                         case "TRight1":
-//                             canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right1";
-//                             return true;
-//                     }
-//                     return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
-//                 });
-//             var engine = new StructureMapUtilitiesExecute(worker, null, provider);
-
-//             // First Step
-//             var target = ElementNode.Root(provider, "TRight1");
-//             try
+//             string mapContent = File.ReadAllText(mapFile);
+//             if (useXml)
 //             {
-//                 engine.transform(null, sourceNode.ToTypedElement(provider), sm1, target);
+//                 return _xmlParser.Parse<StructureMap>(mapContent);
 //             }
-//             catch (System.Exception ex)
+//             else
 //             {
-//                 // Output the error message to the trace
-//                 System.Diagnostics.Trace.WriteLine($"Error during Step 1 transformation: {ex.Message}");
+//                 return _jsonParser.Parse<StructureMap>(mapContent);
 //             }
-
-//             var xml2 = target.ToXml(new FhirXmlSerializationSettings() { Pretty = true });
-
-//             // Output the result to the trace
-//             System.Diagnostics.Trace.WriteLine("Step 1 Transformation Result:");
-//             System.Diagnostics.Trace.WriteLine(xml2);
-
-//             // Ensure the directory exists before saving the result
-//             string resultDirectory = @$"{mappingtutorial_folder}/step1/result/";
-//             if (!Directory.Exists(resultDirectory))
-//             {
-//                 Directory.CreateDirectory(resultDirectory);
-//             }
-//             // Save the result to a file
-//             System.IO.File.WriteAllText(@$"{resultDirectory}/step1_result.xml", xml2);
-
-//             // Now for Step 1b
-//             target = ElementNode.Root(provider, "TRight1");
-//             try
-//             {
-//                 engine.transform(null, sourceNode.ToTypedElement(provider), sm1b, target);
-//             }
-//             catch (System.Exception ex)
-//             {
-//                 // Output the error message to the trace
-//                 System.Diagnostics.Trace.WriteLine($"Error during Step 1b transformation: {ex.Message}");
-//             }
-
-//             xml2 = target.ToXml(new FhirXmlSerializationSettings() { Pretty = true });
-
-//             // Output the result to the trace
-//             System.Diagnostics.Trace.WriteLine("Step 1b Transformation Result:");
-//             System.Diagnostics.Trace.WriteLine(xml2);
-
-//             // Save the result to a file
-//             System.IO.File.WriteAllText(@$"{resultDirectory}/step1b_result.xml", xml2);
 //         }
 
-//         [TestMethod]
-//         public void Tutorial_Step7()
+//         private static ITypedElement ParseSourceResource(string sourceFile, IStructureDefinitionSummaryProvider provider, bool useXml)
 //         {
-//             var parser = new StructureMapUtilitiesParse();
-
-//             // Updated paths to your map files
-//             var mapStep7 = System.IO.File.ReadAllText(@$"{mappingtutorial_folder}/step7/map/step7.map");
-//             var sm7 = parser.parse(mapStep7, "Step7");
-//             System.IO.File.WriteAllText(
-//                 @$"{mappingtutorial_folder}/step7/map/step7.xml.new",
-//                 _xmlSerializer.SerializeToString(sm7));
-
-//             var mapStep7b = System.IO.File.ReadAllText(@$"{mappingtutorial_folder}/step7/map/step7b.map");
-//             var sm7b = parser.parse(mapStep7b, "Step7b");
-//             System.IO.File.WriteAllText(
-//                 @$"{mappingtutorial_folder}/step7/map/step7b.xml.new",
-//                 _xmlSerializer.SerializeToString(sm7b));
-
-//             var source7 = System.IO.File.ReadAllText(@$"{mappingtutorial_folder}/step7/source/source.json");
-//             var sourceNode = FhirJsonNode.Parse(source7);
-
-//             var source = new CachedResolver(new MultiResolver(
-//                new DirectorySource(@$"{mappingtutorial_folder}/step7/logical"),
-//                ZipSource.CreateValidationSource()
-//                ));
-//             source.Load += Source_Load;
-//             var worker = new TestWorker(source);
-
-//             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
-//                 source,
-//                 (string name, out string canonical) =>
-//                 {
-//                     switch (name)
-//                     {
-//                         case "TLeft":
-//                             canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left-7";
-//                             return true;
-//                         case "TRight1":
-//                             canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right-7";
-//                             return true;
-//                     }
-//                     return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
-//                 });
-//             var engine = new StructureMapUtilitiesExecute(worker, null, provider);
-
-//             // First Step
-//             var target = ElementNode.Root(provider, "TRight");
-//             try
+//             string content = File.ReadAllText(sourceFile);
+//             if (useXml)
 //             {
-//                 engine.transform(null, sourceNode.ToTypedElement(provider), sm7, target);
+//                 var resource = _xmlParser.Parse<Resource>(content);
+//                 return resource.ToTypedElement(provider);
 //             }
-//             catch (System.Exception ex)
+//             else
 //             {
-//                 // Output the error message to the trace
-//                 System.Diagnostics.Trace.WriteLine($"Error during Step 7 transformation: {ex.Message}");
+//                 var resource = _jsonParser.Parse<Resource>(content);
+//                 return resource.ToTypedElement(provider);
 //             }
-
-//             var xml2 = target.ToXml(new FhirXmlSerializationSettings() { Pretty = true });
-
-//             // Output the result to the trace
-//             System.Diagnostics.Trace.WriteLine("Step 7 Transformation Result:");
-//             System.Diagnostics.Trace.WriteLine(xml2);
-
-//             // Ensure the directory exists before saving the result
-//             string resultDirectory = @$"{mappingtutorial_folder}/step7/result/";
-//             if (!Directory.Exists(resultDirectory))
-//             {
-//                 Directory.CreateDirectory(resultDirectory);
-//             }
-//             // Save the result to a file
-//             System.IO.File.WriteAllText(@$"{resultDirectory}/step7_result.xml", xml2);
-
-//             // Now for Step 7b
-//             target = ElementNode.Root(provider, "TRight");
-//             try
-//             {
-//                 engine.transform(null, sourceNode.ToTypedElement(provider), sm7b, target);
-//             }
-//             catch (System.Exception ex)
-//             {
-//                 // Output the error message to the trace
-//                 System.Diagnostics.Trace.WriteLine($"Error during Step 7b transformation: {ex.Message}");
-//             }
-
-//             xml2 = target.ToXml(new FhirXmlSerializationSettings() { Pretty = true });
-
-//             // Output the result to the trace
-//             System.Diagnostics.Trace.WriteLine("Step 7b Transformation Result:");
-//             System.Diagnostics.Trace.WriteLine(xml2);
-
-//             // Save the result to a file
-//             System.IO.File.WriteAllText(@$"{resultDirectory}/step7b_result.xml", xml2);
 //         }
 
+//         private static string GetTargetResourceType(StructureMap structureMap)
+//         {
+//             // Assume that the target resource type is specified in the StructureMap's group rule
+//             // This may need to be adjusted based on how your StructureMaps are defined
+//             return structureMap.Group.FirstOrDefault()?.Input.FirstOrDefault(i => i.Mode == StructureMap.StructureMapGroupInputMode.Target)?.Type ?? "Bundle";
+//         }
 
+//         // Implement a simple IWorkerContext for the mapping engine
+//         public class TestWorker : StructureMapUtilitiesExecute.IWorkerContext
+//         {
+//             private readonly IResourceResolver _resolver;
+
+//             public TestWorker(IResourceResolver resolver)
+//             {
+//                 _resolver = resolver;
+//             }
+
+//             public CodeSystem FetchCodeSystem(string system)
+//             {
+//                 return _resolver.ResolveByUri(system) as CodeSystem;
+//             }
+
+//             public ValueSet FetchValueSet(string uri)
+//             {
+//                 return _resolver.ResolveByUri(uri) as ValueSet;
+//             }
+
+//             public StructureDefinition FetchTypeDefinition(string typeName)
+//             {
+//                 return _resolver.FindStructureDefinitionForCoreType(typeName);
+//             }
+
+//             public StructureDefinition FetchResource(string uri)
+//             {
+//                 return _resolver.ResolveByUri(uri) as StructureDefinition;
+//             }
+
+//             public IEnumerable<StructureDefinition> AllStructures()
+//             {
+//                 return Enumerable.Empty<StructureDefinition>();
+//             }
+
+//             public NamingSystem FetchNamingSystem(string uri)
+//             {
+//                 return _resolver.ResolveByUri(uri) as NamingSystem;
+//             }
+//         }
 //     }
 // }
