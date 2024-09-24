@@ -5,7 +5,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <StartupObject>Grey.TutorialTests.Program</StartupObject> <!-- Now matches the namespace and class -->
+    <StartupObject>Grey.TutorialTests.Program</StartupObject> <!-- Explicit entry point -->
   </PropertyGroup>
 
   <ItemGroup>
