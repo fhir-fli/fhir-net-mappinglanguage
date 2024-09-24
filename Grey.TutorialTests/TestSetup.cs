@@ -1,61 +1,42 @@
 namespace Grey.TutorialTests
 {
-    using Hl7.Fhir.Model;
-    using Hl7.Fhir.Serialization;
     using System;
     using System.IO;
     using System.Net.Http;
     using System.Text;
-    using System.Threading.Tasks; // Keep this for async/await
+    using System.Threading.Tasks;
 
     class Program
     {
         [STAThread]
-        static async System.Threading.Tasks.Task Main() // Explicitly use System.Threading.Tasks.Task
+        static async Task Main() // Explicitly use System.Threading.Tasks.Task
         {
             string baseDirectory = @"/home/grey/dev/fhir-net-mappinglanguage/Grey.TutorialTests/maptutorial";
-            var xmlParser = new FhirXmlParser();
-            var jsonSerializer = new FhirJsonSerializer(new SerializerSettings() { Pretty = true }); // Enable pretty-printing
-            var xmlSerializer = new FhirXmlSerializer(new SerializerSettings() { Pretty = true });
             var httpClient = new HttpClient(); // HTTP client for Matchbox API requests
 
             // Iterate through step1 to step13 directories
             for (int step = 1; step <= 13; step++)
             {
-                string stepDirectory = Path.Combine(baseDirectory, $"step{step}", "logical");
+                string stepDirectory = Path.Combine(baseDirectory, $"step{step}", "map");
 
                 if (Directory.Exists(stepDirectory))
                 {
-                    string[] xmlFiles = Directory.GetFiles(stepDirectory, "*.xml");
+                    string[] mapFiles = Directory.GetFiles(stepDirectory, "*.map");
 
-                    foreach (string xmlFile in xmlFiles)
+                    foreach (string mapFile in mapFiles)
                     {
                         try
                         {
-                            // Read the XML content
-                            string xmlContent = File.ReadAllText(xmlFile);
-
-                            // Parse the XML to a FHIR resource
-                            Resource resource = xmlParser.Parse<Resource>(xmlContent);
-
-                            // Serialize the resource to JSON with pretty-printing
-                            string jsonOutput = jsonSerializer.SerializeToString(resource);
-                            string jsonFilePath = Path.ChangeExtension(xmlFile, ".json");
-                            File.WriteAllText(jsonFilePath, jsonOutput);
-
-                            // Serialize to XML and overwrite the original file
-                            string xmlOutput = xmlSerializer.SerializeToString(resource);
-                            File.WriteAllText(xmlFile, xmlOutput); // Overwrite the original XML file
-
-                            Console.WriteLine($"Converted locally: {xmlFile} -> {jsonFilePath}");
+                            // Read the .map content (FHIR Mapping Language)
+                            string mapContent = File.ReadAllText(mapFile);
 
                             // *** Remote Conversion (using Matchbox API) ***
-                            await ConvertWithMatchbox(httpClient, xmlContent, xmlFile, ".java.xml", "application/fhir+xml;fhirVersion=4.0");
-                            await ConvertWithMatchbox(httpClient, xmlContent, xmlFile, ".java.json", "application/fhir+json;fhirVersion=4.0");
+                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
+                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"Error processing {xmlFile}: {ex.Message}");
+                            Console.WriteLine($"Error processing {mapFile}: {ex.Message}");
                         }
                     }
                 }
@@ -67,18 +48,27 @@ namespace Grey.TutorialTests
         }
 
         // Function to handle remote conversion with Matchbox API
-        private static async System.Threading.Tasks.Task ConvertWithMatchbox(HttpClient httpClient, string mapContent, string mapFilePath, string outputExtension, string acceptHeader)
+        private static async Task ConvertWithMatchbox(HttpClient httpClient, string mapContent, string mapFilePath, string outputExtension, string acceptHeader)
         {
             try
             {
+                // Log details of the request
+                Console.WriteLine($"Sending request to Matchbox for {mapFilePath}");
+                Console.WriteLine($"Content-Type: text/fhir-mapping");
+                Console.WriteLine($"Accept: {acceptHeader}");
+                Console.WriteLine($"Map Content: {mapContent}");
+
+                // Create the HTTP request
                 var request = new HttpRequestMessage(HttpMethod.Post, "https://test.ahdis.ch/matchbox/fhir/StructureMap/$convert");
                 request.Content = new StringContent(mapContent, Encoding.UTF8, "text/fhir-mapping");
                 request.Headers.Accept.Clear();
                 request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(acceptHeader));
 
+                // Send the request
                 var response = await httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
 
+                // Read the response content
                 string convertedContent = await response.Content.ReadAsStringAsync();
                 string outputFilePath = Path.ChangeExtension(mapFilePath, outputExtension);
                 File.WriteAllText(outputFilePath, convertedContent);
