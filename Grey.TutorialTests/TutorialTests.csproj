@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Hl7.Fhir.R4B" Version="4.3.0" />
+    <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="MSTest.TestFramework" Version="3.6.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
