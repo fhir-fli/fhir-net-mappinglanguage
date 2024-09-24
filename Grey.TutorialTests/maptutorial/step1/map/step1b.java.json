@@ -3,11 +3,13 @@
   "id": "tutorial-step1b",
   "text": {
     "status": "generated",
-    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step1b&quot;\r\n/// name = &quot;tutorial-step1b&quot;\r\n/// title = &quot;null&quot;\r\n/// status = &quot;draft&quot;\r\n\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left1&quot; alias TLeft1 as source\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right1&quot; alias TRight1 as target\r\n\r\ngroup tutorial(source src : TLeft1, target tgt : TRight1) {\r\n  src.a -&gt; tgt.a &quot;rule_a_short&quot;;\r\n}\r\n\r\n</pre></div>"
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step1b&quot;\r\n/// name = &quot;tutorial-step1b&quot;\r\n/// title = &quot;Tutorial Step 1b&quot;\r\n/// status = &quot;draft&quot;\r\n\r\n// Tutorial Step 1b\r\n\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left1&quot; alias TLeft1 as source\r\nuses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right1&quot; alias TRight1 as target\r\n\r\ngroup tutorial(source src : TLeft1, target tgt : TRight1) {\r\n  src.a -&gt; tgt.a &quot;rule_a_short&quot;;\r\n}\r\n\r\n</pre></div>"
   },
   "url": "http://hl7.org/fhir/StructureMap/tutorial-step1b",
   "name": "tutorial-step1b",
+  "title": "Tutorial Step 1b",
   "status": "draft",
+  "description": "Tutorial Step 1b",
   "structure": [ {
     "url": "http://hl7.org/fhir/StructureDefinition/tutorial-left1",
     "mode": "source",

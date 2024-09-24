@@ -5,8 +5,10 @@
       <div xmlns="http://www.w3.org/1999/xhtml">
          <pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step1b&quot;
 /// name = &quot;tutorial-step1b&quot;
-/// title = &quot;null&quot;
+/// title = &quot;Tutorial Step 1b&quot;
 /// status = &quot;draft&quot;
+
+// Tutorial Step 1b
 
 uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left1&quot; alias TLeft1 as source
 uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right1&quot; alias TRight1 as target
@@ -20,7 +22,9 @@ group tutorial(source src : TLeft1, target tgt : TRight1) {
    </text>
    <url value="http://hl7.org/fhir/StructureMap/tutorial-step1b"/>
    <name value="tutorial-step1b"/>
+   <title value="Tutorial Step 1b"/>
    <status value="draft"/>
+   <description value="Tutorial Step 1b"/>
    <structure>
       <url value="http://hl7.org/fhir/StructureDefinition/tutorial-left1"/>
       <mode value="source"/>

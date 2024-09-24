@@ -62,12 +62,6 @@ namespace Grey.TutorialTests
         {
             try
             {
-                // Log details of the request
-                Console.WriteLine($"Sending request to Matchbox for {mapFilePath}");
-                Console.WriteLine($"Content-Type: text/fhir-mapping");
-                Console.WriteLine($"Accept: {acceptHeader}");
-                Console.WriteLine($"Map Content: {mapContent}");
-
                 // Create the HTTP request
                 var request = new HttpRequestMessage(HttpMethod.Post, "https://test.ahdis.ch/matchbox/fhir/StructureMap/$convert");
                 request.Content = new StringContent(mapContent, Encoding.UTF8, "text/fhir-mapping");
@@ -82,8 +76,6 @@ namespace Grey.TutorialTests
                 string convertedContent = await response.Content.ReadAsStringAsync();
                 string outputFilePath = Path.ChangeExtension(mapFilePath, outputExtension);
                 File.WriteAllText(outputFilePath, convertedContent);
-
-                Console.WriteLine($"Converted remotely via Matchbox: {mapFilePath} -> {outputFilePath}");
             }
             catch (Exception ex)
             {
@@ -118,7 +110,6 @@ namespace Grey.TutorialTests
                 string xmlOutput = _xmlSerializer.SerializeToString(structureMap); // Convert to XML
                 string outputFilePath = Path.ChangeExtension(mapFilePath, ".dotnet.xml"); // Change file extension to .dotnet.xml
                 File.WriteAllText(outputFilePath, xmlOutput); // Write the XML output to file
-                Console.WriteLine($"Serialized locally to XML: {outputFilePath}");
             }
             catch (Exception ex)
             {
@@ -134,7 +125,6 @@ namespace Grey.TutorialTests
                 string jsonOutput = _jsonSerializer.SerializeToString(structureMap); // Convert to JSON
                 string outputFilePath = Path.ChangeExtension(mapFilePath, ".dotnet.json"); // Change file extension to .dotnet.json
                 File.WriteAllText(outputFilePath, jsonOutput); // Write the JSON output to file
-                Console.WriteLine($"Serialized locally to JSON: {outputFilePath}");
             }
             catch (Exception ex)
             {
