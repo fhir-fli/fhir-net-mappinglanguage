@@ -12,12 +12,9 @@
         - http://hl7.org/fhir/StructureDefinition/tutorial-leftinner (step10)
         - http://hl7.org/fhir/StructureDefinition/tutorial-right
         - http://hl7.org/fhir/StructureDefinition/tutorial-rightinner (step10)
-2. Used dotnet to convert these to json
-3. Started with .map files from the Matchbox [fhir-mapping-tutorial](https://github.com/ahdis/fhir-mapping-tutorial/tree/master)
-    - Tried to use both Matchbox and dotnet to convert to StructureMaps in xml and json
+3. Used dotnet to convert StructureDefinitions to ```JSON```
+4. Used matchbox to convert mapping files to StructureMaps (```XML``` and ```JSON```)
     - There were some maps that didn't start with ```map``` and I couldn't get dotnet to parse them
-    - I just kept the Matchbox versions for consistency
-4. Sources I again started with the xml files the Matchbox [fhir-mapping-tutorial](https://github.com/ahdis/fhir-mapping-tutorial/tree/master)
-    - Converted them manually using [this FHIR in XML to JSON converter](https://fhir-formats.github.io/#) (I wasn't able to figure out how to get dotnet to do it for me)
+5. Converted sources manually using [this FHIR in XML to JSON converter](https://fhir-formats.github.io/#)
+    - I wasn't able to figure out how to get dotnet to do it for me
     - If you wanted to double-check #12 for me, that would be probably be good
-5. Replaced TRight1 -> TRight and TLeft1 -> TLeft for consistency (and to make the test setup easier)

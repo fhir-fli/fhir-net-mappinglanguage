@@ -14,6 +14,8 @@ namespace Grey.TutorialTests
     {
         private static FhirXmlSerializer _xmlSerializer = new FhirXmlSerializer(new SerializerSettings() { Pretty = true });
         private static FhirJsonSerializer _jsonSerializer = new FhirJsonSerializer(new SerializerSettings() { Pretty = true });
+        private static FhirXmlParser _xmlParser = new FhirXmlParser();
+        private static FhirJsonParser _jsonParser = new FhirJsonParser();
 
         [STAThread]
         static async System.Threading.Tasks.Task Main()
@@ -25,6 +27,7 @@ namespace Grey.TutorialTests
             for (int step = 1; step <= 13; step++)
             {
                 string stepDirectory = Path.Combine(baseDirectory, $"step{step}", "map");
+                string logicalDirectory = Path.Combine(baseDirectory, $"step{step}", "logical");
 
                 if (Directory.Exists(stepDirectory))
                 {
@@ -53,6 +56,16 @@ namespace Grey.TutorialTests
                 else
                 {
                     Console.WriteLine($"Directory {stepDirectory} does not exist.");
+                }
+
+                // Convert XML files in the logical directory to JSON
+                if (Directory.Exists(logicalDirectory))
+                {
+                    await ConvertXmlToJsonInDirectory(logicalDirectory);
+                }
+                else
+                {
+                    Console.WriteLine($"Directory {logicalDirectory} does not exist.");
                 }
             }
         }
@@ -99,6 +112,34 @@ namespace Grey.TutorialTests
             catch (Exception ex)
             {
                 Console.WriteLine($"Error converting {mapFilePath} locally using .NET: {ex.Message}");
+            }
+        }
+
+        // Function to convert XML files in a directory to JSON
+        private static async System.Threading.Tasks.Task ConvertXmlToJsonInDirectory(string directoryPath)
+        {
+            string[] xmlFiles = Directory.GetFiles(directoryPath, "*.xml");
+
+            foreach (var xmlFile in xmlFiles)
+            {
+                try
+                {
+                    // Read the XML content and parse it as a FHIR Resource
+                    string xmlContent = File.ReadAllText(xmlFile);
+                    var resource = _xmlParser.Parse<Resource>(xmlContent);
+
+                    // Serialize the FHIR Resource to JSON
+                    string jsonContent = _jsonSerializer.SerializeToString(resource);
+
+                    // Write the JSON to a new file
+                    string jsonFilePath = Path.ChangeExtension(xmlFile, ".json");
+                    await File.WriteAllTextAsync(jsonFilePath, jsonContent);
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error converting {xmlFile} to JSON: {ex.Message}");
+                }
             }
         }
 
