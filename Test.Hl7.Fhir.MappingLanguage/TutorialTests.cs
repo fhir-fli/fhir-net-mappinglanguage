@@ -129,16 +129,16 @@ namespace Test.FhirMappingLanguage
                     switch (name)
                     {
                         case "TLeft":
-                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left1";
+                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left";
                             return true;
                         case "TRight":
-                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right1";
+                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right";
                             return true;
                     }
                     return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
                 });
             var engine = new StructureMapUtilitiesExecute(worker, null, provider);
-            // var ti = provider.Provide("http://hl7.org/fhir/StructureDefinition/tutorial-left1");
+            // var ti = provider.Provide("http://hl7.org/fhir/StructureDefinition/tutorial-left");
 
             var target = ElementNode.Root(provider, "TRight");
             try
@@ -405,10 +405,10 @@ namespace Test.FhirMappingLanguage
                     switch (name)
                     {
                         case "TLeft":
-                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left-5";
+                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left";
                             return true;
                         case "TRight":
-                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right-5";
+                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right";
                             return true;
                     }
                     return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
@@ -458,10 +458,10 @@ namespace Test.FhirMappingLanguage
                     switch (name)
                     {
                         case "TLeft":
-                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left-5";
+                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left";
                             return true;
                         case "TRight":
-                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right-5";
+                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right";
                             return true;
                     }
                     return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
