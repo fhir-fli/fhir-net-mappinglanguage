@@ -20,4 +20,4 @@
     - If you wanted to double-check #12 for me, that would be probably be good
 6. Transformations
     - dotnet version works and writes to file
-    - I'm not sure if there's an issue with matchbox, or with my code, because all I'm getting back is {"resourceType":"TRight"}
+    - I'm not sure if there's an issue with matchbox or with my code, because all I'm getting back is {"resourceType":"TRight"}

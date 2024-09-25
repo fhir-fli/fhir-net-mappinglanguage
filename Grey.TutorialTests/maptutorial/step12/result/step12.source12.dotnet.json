@@ -1,0 +1,12 @@
+{
+  "az1": [
+    {
+      "az2": "FHIR",
+      "az3": "Fast"
+    },
+    {
+      "az2": "FHIR",
+      "az3": "Resource"
+    }
+  ]
+}
