@@ -9,6 +9,8 @@ namespace Grey.TutorialTests
     using Hl7.Fhir.MappingLanguage;
     using Hl7.Fhir.Model;
     using Hl7.Fhir.Serialization;
+    using Hl7.Fhir.Specification;
+    using Hl7.Fhir.Specification.Source;
 
     class Program
     {
@@ -16,6 +18,30 @@ namespace Grey.TutorialTests
         private static FhirJsonSerializer _jsonSerializer = new FhirJsonSerializer(new SerializerSettings() { Pretty = true });
         private static FhirXmlParser _xmlParser = new FhirXmlParser();
         private static FhirJsonParser _jsonParser = new FhirJsonParser();
+
+        internal static StructureMapUtilitiesAnalyze.IWorkerContext CreateWorker()
+        {
+            var source = new CachedResolver(new MultiResolver(
+                new DirectorySource(@"c:\temp\analyzetests"),
+                ZipSource.CreateValidationSource()
+                ));
+            source.Load += Source_Load;
+            var worker = new TestWorker(source);
+            return worker;
+        }
+
+        private static void Source_Load(object sender, CachedResolver.LoadResourceEventArgs e)
+        {
+            if (e.Resource is StructureDefinition sd)
+            {
+                sd.Abstract = false;
+                if (sd.Snapshot == null)
+                {
+                    sd.Snapshot = new StructureDefinition.SnapshotComponent();
+                    sd.Snapshot.Element.AddRange(sd.Differential.Element);
+                }
+            }
+        }
 
         [STAThread]
         static async System.Threading.Tasks.Task Main()
@@ -41,8 +67,8 @@ namespace Grey.TutorialTests
                             string mapContent = File.ReadAllText(mapFile);
 
                             // *** Remote Conversion (using Matchbox API) ***
-                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
-                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
+                            // await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
+                            // await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
 
                             // *** Local Conversion (using .NET StructureMapParser) ***
                             // ConvertWithDotNet(mapContent, mapFile);
@@ -61,13 +87,189 @@ namespace Grey.TutorialTests
                 // Convert XML files in the logical directory to JSON
                 if (Directory.Exists(logicalDirectory))
                 {
-                    await ConvertXmlToJsonInDirectory(logicalDirectory);
+                    // await ConvertXmlToJsonInDirectory(logicalDirectory);
                 }
                 else
                 {
                     Console.WriteLine($"Directory {logicalDirectory} does not exist.");
                 }
             }
+
+            // Iterate through step1 to step13 directories
+            for (int step = 1; step <= 13; step++)
+            {
+                string logicalDirectory = Path.Combine(baseDirectory, $"step{step}", "logical");
+                string mapDirectory = Path.Combine(baseDirectory, $"step{step}", "map");
+                string sourceDirectory = Path.Combine(baseDirectory, $"step{step}", "source");
+                string resultDirectory = Path.Combine(baseDirectory, $"step{step}", "result");
+
+                if (Directory.Exists(mapDirectory))
+                {
+                    // Get all .xml and .json files from the map directory
+                    string[] xmlStructureMapFiles = Directory.GetFiles(mapDirectory, "*.xml");
+                    string[] jsonStructureMapFiles = Directory.GetFiles(mapDirectory, "*.json");
+
+                    // Print the names of .xml files
+                    Console.WriteLine($"Step {step}: XML StructureMap files:");
+                    foreach (string file in xmlStructureMapFiles)
+                    {
+                        string[] xmlSourceFiles = Directory.GetFiles(sourceDirectory, "*.xml");
+                        foreach (string xmlFile in xmlSourceFiles)
+                        {
+                            var sourceFile = System.IO.File.ReadAllText(xmlFile);
+                            var sourceNode = FhirXmlNode.Parse(sourceFile);
+
+                            // Initialize a dictionary to store type names and their canonical URLs
+                            Dictionary<string, string> typeToCanonicalMap = new Dictionary<string, string>();
+
+                            // Iterate over all XML files in the logicalDirectory to load the StructureDefinitions
+                            string[] xmlLogicalFiles = Directory.GetFiles(logicalDirectory, "*.xml");
+                            foreach (string logicalFile in xmlLogicalFiles)
+                            {
+                                try
+                                {
+                                    string content = File.ReadAllText(logicalFile);
+                                    var structureDefinition = _xmlParser.Parse<StructureDefinition>(content);  // Parse XML into StructureDefinition
+
+                                    if (structureDefinition != null && !string.IsNullOrEmpty(structureDefinition.Name) && !string.IsNullOrEmpty(structureDefinition.Url))
+                                    {
+                                        // Store the StructureDefinition type name and canonical URL in the dictionary
+                                        typeToCanonicalMap[structureDefinition.Name] = structureDefinition.Url;
+                                        Console.WriteLine($"Loaded StructureDefinition: {structureDefinition.Name} -> {structureDefinition.Url}");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error loading StructureDefinition from {logicalFile}: {ex.Message}");
+                                }
+                            }
+
+                            var source = new CachedResolver(new MultiResolver(
+                                new DirectorySource(logicalDirectory),
+                                ZipSource.CreateValidationSource()
+                            ));
+                            source.Load += Source_Load;
+                            var worker = new TestWorker(source);
+
+                            // Create the dynamic StructureDefinitionSummaryProvider
+                            IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
+                                source,
+                                (string name, out string canonical) =>
+                                {
+                                    // Check if the name matches any of the loaded StructureDefinitions
+                                    if (typeToCanonicalMap.TryGetValue(name, out canonical))
+                                    {
+                                        return true;  // Return true if a match is found
+                                    }
+
+                                    // Fallback to the default name mapper if no match is found
+                                    return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
+                                });
+                        }
+                    }
+
+                    // Now handling JSON files similarly to the XML handling above
+                    Console.WriteLine($"Step {step}: JSON StructureMap files:");
+                    foreach (string file in jsonStructureMapFiles)
+                    {
+                        string[] jsonSourceFiles = Directory.GetFiles(sourceDirectory, "*.json");
+
+                        foreach (string jsonFile in jsonSourceFiles)
+                        {
+                            var sourceFile = System.IO.File.ReadAllText(jsonFile);
+                            var sourceNode = FhirJsonNode.Parse(sourceFile);
+
+                            // Initialize a dictionary to store type names and their canonical URLs
+                            Dictionary<string, string> typeToCanonicalMap = new Dictionary<string, string>();
+
+                            // Iterate over all JSON files in the logicalDirectory to load the StructureDefinitions
+                            string[] jsonLogicalFiles = Directory.GetFiles(logicalDirectory, "*.json");
+                            foreach (string logicalFile in jsonLogicalFiles)
+                            {
+                                try
+                                {
+                                    string content = File.ReadAllText(logicalFile);
+                                    var structureDefinition = _jsonParser.Parse<StructureDefinition>(content);  // Parse JSON into StructureDefinition
+
+                                    if (structureDefinition != null && !string.IsNullOrEmpty(structureDefinition.Name) && !string.IsNullOrEmpty(structureDefinition.Url))
+                                    {
+                                        // Store the StructureDefinition type name and canonical URL in the dictionary
+                                        typeToCanonicalMap[structureDefinition.Name] = structureDefinition.Url;
+                                        Console.WriteLine($"Loaded StructureDefinition: {structureDefinition.Name} -> {structureDefinition.Url}");
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($"Error loading StructureDefinition from {logicalFile}: {ex.Message}");
+                                }
+                            }
+
+                            // Load the map content directly from the .json file
+                            var mapContent = System.IO.File.ReadAllText(file);
+                            var structureMap = _jsonParser.Parse<StructureMap>(mapContent); // Parsing the StructureMap from the map file
+
+                            var source = new CachedResolver(new MultiResolver(
+                                new DirectorySource(logicalDirectory),
+                                ZipSource.CreateValidationSource()
+                            ));
+                            source.Load += Source_Load;
+                            var worker = new TestWorker(source);
+
+                            // Create the dynamic StructureDefinitionSummaryProvider
+                            IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
+                                source,
+                                (string name, out string canonical) =>
+                                {
+                                    // Check if the name matches any of the loaded StructureDefinitions
+                                    if (typeToCanonicalMap.TryGetValue(name, out canonical))
+                                    {
+                                        return true;  // Return true if a match is found
+                                    }
+
+                                    // Fallback to the default name mapper if no match is found
+                                    return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
+                                });
+
+                            // Initialize the StructureMapUtilitiesExecute to process the map
+                            var engine = new StructureMapUtilitiesExecute(worker, null, provider);
+
+                            var target = ElementNode.Root(provider, "TRight");
+
+                            try
+                            {
+                                // Transform the source using the map
+                                engine.transform(null, sourceNode.ToTypedElement(provider), structureMap, target);
+                            }
+                            catch (System.Exception ex)
+                            {
+                                System.Diagnostics.Trace.WriteLine(ex.Message);
+                            }
+
+                            // Serialize the result to JSON
+                            var json = target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
+
+                            // Combine the names of the map file and the source file to create the output file name
+                            string mapName = Path.GetFileNameWithoutExtension(file);
+                            string sourceName = Path.GetFileNameWithoutExtension(jsonFile);
+                            string resultFileName = $"{mapName}.{sourceName}.json";
+
+                            // Write the result JSON to the result directory
+                            string resultFilePath = Path.Combine(resultDirectory, resultFileName);
+                            File.WriteAllText(resultFilePath, json);
+
+                            Console.WriteLine($"Saved result to: {resultFilePath}");
+                        }
+                    }
+
+
+                }
+                else
+                {
+                    Console.WriteLine($"Directory {mapDirectory} does not exist.");
+                }
+            }
+
+
         }
 
         // Function to handle remote conversion with Matchbox API (Java-based conversion)
