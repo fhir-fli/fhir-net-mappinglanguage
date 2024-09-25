@@ -18,3 +18,6 @@
 5. Converted sources manually using [this FHIR in XML to JSON converter](https://fhir-formats.github.io/#)
     - I wasn't able to figure out how to get dotnet to do it for me
     - If you wanted to double-check #12 for me, that would be probably be good
+6. Transformations
+    - dotnet version works and writes to file
+    - I'm not sure if there's an issue with matchbox, or with my code, because all I'm getting back is {"resourceType":"TRight"}
