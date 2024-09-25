@@ -67,8 +67,8 @@ namespace Grey.TutorialTests
                             string mapContent = File.ReadAllText(mapFile);
 
                             // *** Remote Conversion (using Matchbox API) ***
-                            // await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
-                            // await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
+                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
+                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
 
                             // *** Local Conversion (using .NET StructureMapParser) ***
                             // ConvertWithDotNet(mapContent, mapFile);
@@ -87,7 +87,7 @@ namespace Grey.TutorialTests
                 // Convert XML files in the logical directory to JSON
                 if (Directory.Exists(logicalDirectory))
                 {
-                    // await ConvertXmlToJsonInDirectory(logicalDirectory);
+                    await ConvertXmlToJsonInDirectory(logicalDirectory);
                 }
                 else
                 {
@@ -109,7 +109,7 @@ namespace Grey.TutorialTests
                     string[] xmlStructureMapFiles = Directory.GetFiles(mapDirectory, "*.xml");
                     string[] jsonStructureMapFiles = Directory.GetFiles(mapDirectory, "*.json");
 
-                    // Print the names of .xml files
+                    // Processing XML StructureMap files
                     Console.WriteLine($"Step {step}: XML StructureMap files:");
                     foreach (string file in xmlStructureMapFiles)
                     {
@@ -165,15 +165,47 @@ namespace Grey.TutorialTests
                                     // Fallback to the default name mapper if no match is found
                                     return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
                                 });
+
+                            // Load the map content directly from the .xml file
+                            var mapContent = System.IO.File.ReadAllText(file);
+                            var structureMap = _xmlParser.Parse<StructureMap>(mapContent); // Parsing the StructureMap from the map file
+
+                            // Initialize the StructureMapUtilitiesExecute to process the map
+                            var engine = new StructureMapUtilitiesExecute(worker, null, provider);
+
+                            var target = ElementNode.Root(provider, "TRight");
+
+                            try
+                            {
+                                // Transform the source using the map
+                                engine.transform(null, sourceNode.ToTypedElement(provider), structureMap, target);
+                            }
+                            catch (System.Exception ex)
+                            {
+                                System.Diagnostics.Trace.WriteLine(ex.Message);
+                            }
+
+                            // Serialize the result to XML
+                            var resultXml = target.ToXml(new FhirXmlSerializationSettings() { Pretty = true });
+
+                            // Combine the names of the map file and the source file to create the output file name
+                            string mapName = Path.GetFileNameWithoutExtension(file);
+                            string sourceName = Path.GetFileNameWithoutExtension(xmlFile);
+                            string resultFileName = $"{mapName}.{sourceName}.xml";
+
+                            // Write the result XML to the result directory
+                            string resultFilePath = Path.Combine(resultDirectory, resultFileName);
+                            File.WriteAllText(resultFilePath, resultXml);
+
+                            Console.WriteLine($"Saved result to: {resultFilePath}");
                         }
                     }
 
-                    // Now handling JSON files similarly to the XML handling above
+                    // Processing JSON StructureMap files
                     Console.WriteLine($"Step {step}: JSON StructureMap files:");
                     foreach (string file in jsonStructureMapFiles)
                     {
                         string[] jsonSourceFiles = Directory.GetFiles(sourceDirectory, "*.json");
-
                         foreach (string jsonFile in jsonSourceFiles)
                         {
                             var sourceFile = System.IO.File.ReadAllText(jsonFile);
@@ -246,7 +278,7 @@ namespace Grey.TutorialTests
                             }
 
                             // Serialize the result to JSON
-                            var json = target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
+                            var resultJson = target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
 
                             // Combine the names of the map file and the source file to create the output file name
                             string mapName = Path.GetFileNameWithoutExtension(file);
@@ -255,13 +287,11 @@ namespace Grey.TutorialTests
 
                             // Write the result JSON to the result directory
                             string resultFilePath = Path.Combine(resultDirectory, resultFileName);
-                            File.WriteAllText(resultFilePath, json);
+                            File.WriteAllText(resultFilePath, resultJson);
 
                             Console.WriteLine($"Saved result to: {resultFilePath}");
                         }
                     }
-
-
                 }
                 else
                 {
