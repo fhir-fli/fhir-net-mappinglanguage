@@ -45,7 +45,7 @@ namespace Grey.TutorialTests
             var httpClient = new HttpClient();
 
             // Step 1: Process files for each step (sending maps to Matchbox API or doing local conversion)
-            await GenerateFilesForSteps(baseDirectory, httpClient);
+            // await GenerateFilesForSteps(baseDirectory, httpClient);
 
             // Step 2: Perform the actual transformations for each step (XML and JSON files)
             await PerformTransformationsForSteps(baseDirectory);
