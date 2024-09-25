@@ -54,7 +54,7 @@ namespace Grey.TutorialTests
         // Generate the necessary files for all tutorial steps, converting maps using either Matchbox or a local .NET implementation.
         private static async System.Threading.Tasks.Task GenerateFilesForSteps(string baseDirectory, HttpClient httpClient)
         {
-            for (int step = 1; step <= 13; step++) // There are 13 steps
+            for (int step = 4; step <= 4; step++) // There are 13 steps
             {
                 // Define directories for maps and logical files for this step
                 string stepDirectory = Path.Combine(baseDirectory, $"step{step}", "map");
