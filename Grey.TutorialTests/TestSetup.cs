@@ -19,17 +19,6 @@ namespace Grey.TutorialTests
         private static FhirXmlParser _xmlParser = new FhirXmlParser();
         private static FhirJsonParser _jsonParser = new FhirJsonParser();
 
-        internal static StructureMapUtilitiesAnalyze.IWorkerContext CreateWorker()
-        {
-            var source = new CachedResolver(new MultiResolver(
-                new DirectorySource(@"c:\temp\analyzetests"),
-                ZipSource.CreateValidationSource()
-                ));
-            source.Load += Source_Load;
-            var worker = new TestWorker(source);
-            return worker;
-        }
-
         private static void Source_Load(object sender, CachedResolver.LoadResourceEventArgs e)
         {
             if (e.Resource is StructureDefinition sd)
@@ -46,31 +35,45 @@ namespace Grey.TutorialTests
         [STAThread]
         static async System.Threading.Tasks.Task Main()
         {
+            // Base directory where all the files are located
             string baseDirectory = @"/home/grey/dev/fhir-net-mappinglanguage/Grey.TutorialTests/maptutorial";
-            var httpClient = new HttpClient(); // HTTP client for Matchbox API requests
 
-            // Iterate through step1 to step13 directories
+            // HttpClient for interacting with the Matchbox API
+            var httpClient = new HttpClient();
+
+            // Step 1: File generation (sending the files to Matchbox API or using local conversion)
+            await GenerateFilesForSteps(baseDirectory, httpClient);
+
+            // Step 2: Perform transformations for each step (XML and JSON)
+            await PerformTransformationsForSteps(baseDirectory);
+        }
+
+        private static async System.Threading.Tasks.Task GenerateFilesForSteps(string baseDirectory, HttpClient httpClient)
+        {
             for (int step = 1; step <= 13; step++)
             {
+                // Define directories for map and logical files
                 string stepDirectory = Path.Combine(baseDirectory, $"step{step}", "map");
                 string logicalDirectory = Path.Combine(baseDirectory, $"step{step}", "logical");
 
+                // Process map files if the directory exists
                 if (Directory.Exists(stepDirectory))
                 {
                     string[] mapFiles = Directory.GetFiles(stepDirectory, "*.map");
 
-                    foreach (string mapFile in mapFiles)
+                    // Process each .map file
+                    foreach (var mapFile in mapFiles)
                     {
                         try
                         {
-                            // Read the .map content (FHIR Mapping Language)
+                            // Read the map content
                             string mapContent = File.ReadAllText(mapFile);
 
-                            // *** Remote Conversion (using Matchbox API) ***
+                            // Send the map content to Matchbox for remote conversion
                             await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
                             await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
 
-                            // *** Local Conversion (using .NET StructureMapParser) ***
+                            // Local conversion (optional, currently commented out)
                             // ConvertWithDotNet(mapContent, mapFile);
                         }
                         catch (Exception ex)
@@ -84,7 +87,7 @@ namespace Grey.TutorialTests
                     Console.WriteLine($"Directory {stepDirectory} does not exist.");
                 }
 
-                // Convert XML files in the logical directory to JSON
+                // Convert XML files in logicalDirectory to JSON
                 if (Directory.Exists(logicalDirectory))
                 {
                     await ConvertXmlToJsonInDirectory(logicalDirectory);
@@ -94,10 +97,86 @@ namespace Grey.TutorialTests
                     Console.WriteLine($"Directory {logicalDirectory} does not exist.");
                 }
             }
+        }
 
-            // Iterate through step1 to step13 directories
+        private static async System.Threading.Tasks.Task ConvertWithMatchbox(HttpClient httpClient, string mapContent, string mapFilePath, string outputExtension, string acceptHeader)
+        {
+            try
+            {
+                // Create the HTTP request for the Matchbox API
+                var request = new HttpRequestMessage(HttpMethod.Post, "https://test.ahdis.ch/matchbox/fhir/StructureMap/$convert")
+                {
+                    Content = new StringContent(mapContent, Encoding.UTF8, "text/fhir-mapping")
+                };
+                request.Headers.Accept.Clear();
+                request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(acceptHeader));
+
+                // Send the request and ensure success
+                var response = await httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                // Write the response content to a file
+                string convertedContent = await response.Content.ReadAsStringAsync();
+                string outputFilePath = Path.ChangeExtension(mapFilePath, outputExtension);
+                File.WriteAllText(outputFilePath, convertedContent);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error converting {mapFilePath} with Matchbox: {ex.Message}");
+            }
+        }
+
+        // Function to handle local conversion with .NET FHIR libraries (StructureMapUtilitiesParse)
+        private static void ConvertWithDotNet(string mapContent, string mapFilePath)
+        {
+            try
+            {
+                // Parse the .map file content to a StructureMap using the .NET FHIR library
+                var parser = new StructureMapUtilitiesParse();
+                var structureMap = parser.parse(mapContent, Path.GetFileNameWithoutExtension(mapFilePath)); // Map name from file
+
+                // Serialize to XML and JSON using .NET FHIR serializers
+                SerializeToXml(structureMap, mapFilePath);
+                SerializeToJson(structureMap, mapFilePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error converting {mapFilePath} locally using .NET: {ex.Message}");
+            }
+        }
+
+
+        private static async System.Threading.Tasks.Task ConvertXmlToJsonInDirectory(string directoryPath)
+        {
+            string[] xmlFiles = Directory.GetFiles(directoryPath, "*.xml");
+
+            foreach (var xmlFile in xmlFiles)
+            {
+                try
+                {
+                    // Read and parse the XML content as a FHIR Resource
+                    string xmlContent = File.ReadAllText(xmlFile);
+                    var resource = _xmlParser.Parse<Resource>(xmlContent);
+
+                    // Serialize the resource to JSON
+                    string jsonContent = _jsonSerializer.SerializeToString(resource);
+
+                    // Write the JSON to a new file
+                    string jsonFilePath = Path.ChangeExtension(xmlFile, ".json");
+                    await File.WriteAllTextAsync(jsonFilePath, jsonContent);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error converting {xmlFile} to JSON: {ex.Message}");
+                }
+            }
+        }
+
+        private static async System.Threading.Tasks.Task PerformTransformationsForSteps(string baseDirectory)
+        {
             for (int step = 1; step <= 13; step++)
             {
+                // Define directories for logical, map, source, and result files
                 string logicalDirectory = Path.Combine(baseDirectory, $"step{step}", "logical");
                 string mapDirectory = Path.Combine(baseDirectory, $"step{step}", "map");
                 string sourceDirectory = Path.Combine(baseDirectory, $"step{step}", "source");
@@ -105,12 +184,8 @@ namespace Grey.TutorialTests
 
                 if (Directory.Exists(mapDirectory))
                 {
-                    // Get all .xml and .json files from the map directory
+                    // Process XML structure maps
                     string[] xmlStructureMapFiles = Directory.GetFiles(mapDirectory, "*.xml");
-                    string[] jsonStructureMapFiles = Directory.GetFiles(mapDirectory, "*.json");
-
-                    // Processing XML StructureMap files
-                    Console.WriteLine($"Step {step}: XML StructureMap files:");
                     foreach (string file in xmlStructureMapFiles)
                     {
                         string[] xmlSourceFiles = Directory.GetFiles(sourceDirectory, "*.xml");
@@ -201,8 +276,8 @@ namespace Grey.TutorialTests
                         }
                     }
 
-                    // Processing JSON StructureMap files
-                    Console.WriteLine($"Step {step}: JSON StructureMap files:");
+                    // Process JSON structure maps
+                    string[] jsonStructureMapFiles = Directory.GetFiles(mapDirectory, "*.json");
                     foreach (string file in jsonStructureMapFiles)
                     {
                         string[] jsonSourceFiles = Directory.GetFiles(sourceDirectory, "*.json");
@@ -298,82 +373,8 @@ namespace Grey.TutorialTests
                     Console.WriteLine($"Directory {mapDirectory} does not exist.");
                 }
             }
-
-
         }
 
-        // Function to handle remote conversion with Matchbox API (Java-based conversion)
-        private static async System.Threading.Tasks.Task ConvertWithMatchbox(HttpClient httpClient, string mapContent, string mapFilePath, string outputExtension, string acceptHeader)
-        {
-            try
-            {
-                // Create the HTTP request
-                var request = new HttpRequestMessage(HttpMethod.Post, "https://test.ahdis.ch/matchbox/fhir/StructureMap/$convert");
-                request.Content = new StringContent(mapContent, Encoding.UTF8, "text/fhir-mapping");
-                request.Headers.Accept.Clear();
-                request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue(acceptHeader));
-
-                // Send the request
-                var response = await httpClient.SendAsync(request);
-                response.EnsureSuccessStatusCode();
-
-                // Read the response content
-                string convertedContent = await response.Content.ReadAsStringAsync();
-                string outputFilePath = Path.ChangeExtension(mapFilePath, outputExtension);
-                File.WriteAllText(outputFilePath, convertedContent);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error converting {mapFilePath} with Matchbox: {ex.Message}");
-            }
-        }
-
-        // Function to handle local conversion with .NET FHIR libraries (StructureMapUtilitiesParse)
-        private static void ConvertWithDotNet(string mapContent, string mapFilePath)
-        {
-            try
-            {
-                // Parse the .map file content to a StructureMap using the .NET FHIR library
-                var parser = new StructureMapUtilitiesParse();
-                var structureMap = parser.parse(mapContent, Path.GetFileNameWithoutExtension(mapFilePath)); // Map name from file
-
-                // Serialize to XML and JSON using .NET FHIR serializers
-                SerializeToXml(structureMap, mapFilePath);
-                SerializeToJson(structureMap, mapFilePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error converting {mapFilePath} locally using .NET: {ex.Message}");
-            }
-        }
-
-        // Function to convert XML files in a directory to JSON
-        private static async System.Threading.Tasks.Task ConvertXmlToJsonInDirectory(string directoryPath)
-        {
-            string[] xmlFiles = Directory.GetFiles(directoryPath, "*.xml");
-
-            foreach (var xmlFile in xmlFiles)
-            {
-                try
-                {
-                    // Read the XML content and parse it as a FHIR Resource
-                    string xmlContent = File.ReadAllText(xmlFile);
-                    var resource = _xmlParser.Parse<Resource>(xmlContent);
-
-                    // Serialize the FHIR Resource to JSON
-                    string jsonContent = _jsonSerializer.SerializeToString(resource);
-
-                    // Write the JSON to a new file
-                    string jsonFilePath = Path.ChangeExtension(xmlFile, ".json");
-                    await File.WriteAllTextAsync(jsonFilePath, jsonContent);
-
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error converting {xmlFile} to JSON: {ex.Message}");
-                }
-            }
-        }
 
         // Function to serialize StructureMap to XML
         private static void SerializeToXml(StructureMap structureMap, string mapFilePath)
@@ -404,5 +405,6 @@ namespace Grey.TutorialTests
                 Console.WriteLine($"Error serializing {mapFilePath} to JSON: {ex.Message}");
             }
         }
+
     }
 }
