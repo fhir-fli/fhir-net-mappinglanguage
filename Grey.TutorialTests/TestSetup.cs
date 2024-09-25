@@ -70,8 +70,8 @@ namespace Grey.TutorialTests
                             string mapContent = File.ReadAllText(mapFile);
 
                             // Send the map content to Matchbox for remote conversion
-                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
-                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
+                            // await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
+                            // await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
 
                             // Local conversion (optional, currently commented out)
                             // ConvertWithDotNet(mapContent, mapFile);
@@ -90,7 +90,7 @@ namespace Grey.TutorialTests
                 // Convert XML files in logicalDirectory to JSON
                 if (Directory.Exists(logicalDirectory))
                 {
-                    await ConvertXmlToJsonInDirectory(logicalDirectory);
+                    // await ConvertXmlToJsonInDirectory(logicalDirectory);
                 }
                 else
                 {
@@ -172,6 +172,7 @@ namespace Grey.TutorialTests
             }
         }
 
+
         private static async System.Threading.Tasks.Task PerformTransformationsForSteps(string baseDirectory)
         {
             for (int step = 1; step <= 13; step++)
@@ -184,195 +185,123 @@ namespace Grey.TutorialTests
 
                 if (Directory.Exists(mapDirectory))
                 {
-                    // Process XML structure maps
-                    string[] xmlStructureMapFiles = Directory.GetFiles(mapDirectory, "*.xml");
-                    foreach (string file in xmlStructureMapFiles)
-                    {
-                        string[] xmlSourceFiles = Directory.GetFiles(sourceDirectory, "*.xml");
-                        foreach (string xmlFile in xmlSourceFiles)
-                        {
-                            var sourceFile = System.IO.File.ReadAllText(xmlFile);
-                            var sourceNode = FhirXmlNode.Parse(sourceFile);
-
-                            // Initialize a dictionary to store type names and their canonical URLs
-                            Dictionary<string, string> typeToCanonicalMap = new Dictionary<string, string>();
-
-                            // Iterate over all XML files in the logicalDirectory to load the StructureDefinitions
-                            string[] xmlLogicalFiles = Directory.GetFiles(logicalDirectory, "*.xml");
-                            foreach (string logicalFile in xmlLogicalFiles)
-                            {
-                                try
-                                {
-                                    string content = File.ReadAllText(logicalFile);
-                                    var structureDefinition = _xmlParser.Parse<StructureDefinition>(content);  // Parse XML into StructureDefinition
-
-                                    if (structureDefinition != null && !string.IsNullOrEmpty(structureDefinition.Name) && !string.IsNullOrEmpty(structureDefinition.Url))
-                                    {
-                                        // Store the StructureDefinition type name and canonical URL in the dictionary
-                                        typeToCanonicalMap[structureDefinition.Name] = structureDefinition.Url;
-                                        Console.WriteLine($"Loaded StructureDefinition: {structureDefinition.Name} -> {structureDefinition.Url}");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine($"Error loading StructureDefinition from {logicalFile}: {ex.Message}");
-                                }
-                            }
-
-                            var source = new CachedResolver(new MultiResolver(
-                                new DirectorySource(logicalDirectory),
-                                ZipSource.CreateValidationSource()
-                            ));
-                            source.Load += Source_Load;
-                            var worker = new TestWorker(source);
-
-                            // Create the dynamic StructureDefinitionSummaryProvider
-                            IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
-                                source,
-                                (string name, out string canonical) =>
-                                {
-                                    // Check if the name matches any of the loaded StructureDefinitions
-                                    if (typeToCanonicalMap.TryGetValue(name, out canonical))
-                                    {
-                                        return true;  // Return true if a match is found
-                                    }
-
-                                    // Fallback to the default name mapper if no match is found
-                                    return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
-                                });
-
-                            // Load the map content directly from the .xml file
-                            var mapContent = System.IO.File.ReadAllText(file);
-                            var structureMap = _xmlParser.Parse<StructureMap>(mapContent); // Parsing the StructureMap from the map file
-
-                            // Initialize the StructureMapUtilitiesExecute to process the map
-                            var engine = new StructureMapUtilitiesExecute(worker, null, provider);
-
-                            var target = ElementNode.Root(provider, "TRight");
-
-                            try
-                            {
-                                // Transform the source using the map
-                                engine.transform(null, sourceNode.ToTypedElement(provider), structureMap, target);
-                            }
-                            catch (System.Exception ex)
-                            {
-                                System.Diagnostics.Trace.WriteLine(ex.Message);
-                            }
-
-                            // Serialize the result to XML
-                            var resultXml = target.ToXml(new FhirXmlSerializationSettings() { Pretty = true });
-
-                            // Combine the names of the map file and the source file to create the output file name
-                            string mapName = Path.GetFileNameWithoutExtension(file);
-                            string sourceName = Path.GetFileNameWithoutExtension(xmlFile);
-                            string resultFileName = $"{mapName}.{sourceName}.xml";
-
-                            // Write the result XML to the result directory
-                            string resultFilePath = Path.Combine(resultDirectory, resultFileName);
-                            File.WriteAllText(resultFilePath, resultXml);
-
-                            Console.WriteLine($"Saved result to: {resultFilePath}");
-                        }
-                    }
-
-                    // Process JSON structure maps
-                    string[] jsonStructureMapFiles = Directory.GetFiles(mapDirectory, "*.json");
-                    foreach (string file in jsonStructureMapFiles)
-                    {
-                        string[] jsonSourceFiles = Directory.GetFiles(sourceDirectory, "*.json");
-                        foreach (string jsonFile in jsonSourceFiles)
-                        {
-                            var sourceFile = System.IO.File.ReadAllText(jsonFile);
-                            var sourceNode = FhirJsonNode.Parse(sourceFile);
-
-                            // Initialize a dictionary to store type names and their canonical URLs
-                            Dictionary<string, string> typeToCanonicalMap = new Dictionary<string, string>();
-
-                            // Iterate over all JSON files in the logicalDirectory to load the StructureDefinitions
-                            string[] jsonLogicalFiles = Directory.GetFiles(logicalDirectory, "*.json");
-                            foreach (string logicalFile in jsonLogicalFiles)
-                            {
-                                try
-                                {
-                                    string content = File.ReadAllText(logicalFile);
-                                    var structureDefinition = _jsonParser.Parse<StructureDefinition>(content);  // Parse JSON into StructureDefinition
-
-                                    if (structureDefinition != null && !string.IsNullOrEmpty(structureDefinition.Name) && !string.IsNullOrEmpty(structureDefinition.Url))
-                                    {
-                                        // Store the StructureDefinition type name and canonical URL in the dictionary
-                                        typeToCanonicalMap[structureDefinition.Name] = structureDefinition.Url;
-                                        Console.WriteLine($"Loaded StructureDefinition: {structureDefinition.Name} -> {structureDefinition.Url}");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine($"Error loading StructureDefinition from {logicalFile}: {ex.Message}");
-                                }
-                            }
-
-                            // Load the map content directly from the .json file
-                            var mapContent = System.IO.File.ReadAllText(file);
-                            var structureMap = _jsonParser.Parse<StructureMap>(mapContent); // Parsing the StructureMap from the map file
-
-                            var source = new CachedResolver(new MultiResolver(
-                                new DirectorySource(logicalDirectory),
-                                ZipSource.CreateValidationSource()
-                            ));
-                            source.Load += Source_Load;
-                            var worker = new TestWorker(source);
-
-                            // Create the dynamic StructureDefinitionSummaryProvider
-                            IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
-                                source,
-                                (string name, out string canonical) =>
-                                {
-                                    // Check if the name matches any of the loaded StructureDefinitions
-                                    if (typeToCanonicalMap.TryGetValue(name, out canonical))
-                                    {
-                                        return true;  // Return true if a match is found
-                                    }
-
-                                    // Fallback to the default name mapper if no match is found
-                                    return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
-                                });
-
-                            // Initialize the StructureMapUtilitiesExecute to process the map
-                            var engine = new StructureMapUtilitiesExecute(worker, null, provider);
-
-                            var target = ElementNode.Root(provider, "TRight");
-
-                            try
-                            {
-                                // Transform the source using the map
-                                engine.transform(null, sourceNode.ToTypedElement(provider), structureMap, target);
-                            }
-                            catch (System.Exception ex)
-                            {
-                                System.Diagnostics.Trace.WriteLine(ex.Message);
-                            }
-
-                            // Serialize the result to JSON
-                            var resultJson = target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
-
-                            // Combine the names of the map file and the source file to create the output file name
-                            string mapName = Path.GetFileNameWithoutExtension(file);
-                            string sourceName = Path.GetFileNameWithoutExtension(jsonFile);
-                            string resultFileName = $"{mapName}.{sourceName}.json";
-
-                            // Write the result JSON to the result directory
-                            string resultFilePath = Path.Combine(resultDirectory, resultFileName);
-                            File.WriteAllText(resultFilePath, resultJson);
-
-                            Console.WriteLine($"Saved result to: {resultFilePath}");
-                        }
-                    }
+                    // Process both XML and JSON structure maps
+                    await ProcessStructureMapFiles(logicalDirectory, mapDirectory, sourceDirectory, resultDirectory, "*.xml", "xml");
+                    await ProcessStructureMapFiles(logicalDirectory, mapDirectory, sourceDirectory, resultDirectory, "*.json", "json");
                 }
                 else
                 {
                     Console.WriteLine($"Directory {mapDirectory} does not exist.");
                 }
             }
+        }
+
+        // Helper method to process both XML and JSON files
+        private static async System.Threading.Tasks.Task ProcessStructureMapFiles(string logicalDirectory, string mapDirectory, string sourceDirectory, string resultDirectory, string fileType, string format)
+        {
+            string[] structureMapFiles = Directory.GetFiles(mapDirectory, fileType);
+
+            foreach (string file in structureMapFiles)
+            {
+                string[] sourceFiles = Directory.GetFiles(sourceDirectory, fileType);
+                foreach (string sourceFile in sourceFiles)
+                {
+                    await ProcessSingleMapFile(logicalDirectory, sourceFile, file, resultDirectory, format);
+                }
+            }
+        }
+
+        // Helper to process a single map file
+        private static async System.Threading.Tasks.Task ProcessSingleMapFile(string logicalDirectory, string sourceFile, string mapFile, string resultDirectory, string format)
+        {
+            // Read source file and load the map
+            var sourceContent = File.ReadAllText(sourceFile);
+            var sourceNode = format == "xml" ? FhirXmlNode.Parse(sourceContent) : FhirJsonNode.Parse(sourceContent);
+
+            // Load StructureDefinitions
+            Dictionary<string, string> typeToCanonicalMap = LoadStructureDefinitions(logicalDirectory, format);
+
+            var source = new CachedResolver(new MultiResolver(new DirectorySource(logicalDirectory), ZipSource.CreateValidationSource()));
+            source.Load += Source_Load;
+            var worker = new TestWorker(source);
+
+            var provider = CreateStructureDefinitionProvider(source, typeToCanonicalMap);
+
+            // Load the map content
+            var mapContent = File.ReadAllText(mapFile);
+            var structureMap = format == "xml" ? _xmlParser.Parse<StructureMap>(mapContent) : _jsonParser.Parse<StructureMap>(mapContent);
+
+            // Initialize the engine and transform
+            var engine = new StructureMapUtilitiesExecute(worker, null, provider);
+            var target = ElementNode.Root(provider, "TRight");
+
+            try
+            {
+                engine.transform(null, sourceNode.ToTypedElement(provider), structureMap, target);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            // Serialize the result
+            var resultContent = format == "xml" ? target.ToXml(new FhirXmlSerializationSettings() { Pretty = true }) : target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
+
+            // Combine names for output file
+            string mapName = Path.GetFileNameWithoutExtension(mapFile);
+            string sourceName = Path.GetFileNameWithoutExtension(sourceFile);
+            string resultFileName = $"{mapName}.{sourceName}.{format}";
+
+            // Write the result to file
+            string resultFilePath = Path.Combine(resultDirectory, resultFileName);
+            await File.WriteAllTextAsync(resultFilePath, resultContent);
+
+            Console.WriteLine($"Saved result to: {resultFilePath}");
+        }
+
+        // Load the StructureDefinitions (XML or JSON) into a dictionary
+        private static Dictionary<string, string> LoadStructureDefinitions(string logicalDirectory, string format)
+        {
+            var typeToCanonicalMap = new Dictionary<string, string>();
+            string fileType = format == "xml" ? "*.xml" : "*.json";
+            string[] logicalFiles = Directory.GetFiles(logicalDirectory, fileType);
+
+            foreach (var logicalFile in logicalFiles)
+            {
+                try
+                {
+                    string content = File.ReadAllText(logicalFile);
+                    var structureDefinition = format == "xml" ? _xmlParser.Parse<StructureDefinition>(content) : _jsonParser.Parse<StructureDefinition>(content);
+
+                    if (!string.IsNullOrEmpty(structureDefinition.Name) && !string.IsNullOrEmpty(structureDefinition.Url))
+                    {
+                        typeToCanonicalMap[structureDefinition.Name] = structureDefinition.Url;
+                        Console.WriteLine($"Loaded StructureDefinition: {structureDefinition.Name} -> {structureDefinition.Url}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading StructureDefinition from {logicalFile}: {ex.Message}");
+                }
+            }
+
+            return typeToCanonicalMap;
+        }
+
+        // Create a dynamic StructureDefinitionSummaryProvider
+        private static IStructureDefinitionSummaryProvider CreateStructureDefinitionProvider(IResourceResolver source, Dictionary<string, string> typeToCanonicalMap)
+        {
+            return new StructureDefinitionSummaryProvider(
+                source,
+                (string name, out string canonical) =>
+                {
+                    if (typeToCanonicalMap.TryGetValue(name, out canonical))
+                    {
+                        return true;
+                    }
+
+                    return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
+                });
         }
 
 
