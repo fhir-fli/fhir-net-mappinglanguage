@@ -248,13 +248,13 @@ namespace Grey.TutorialTests
             var resultContent = format == "xml" ? target.ToXml(new FhirXmlSerializationSettings() { Pretty = true }) : target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
 
             // Combine names for output file
-            string mapName = Path.GetFileNameWithoutExtension(mapFile);
-            string sourceName = Path.GetFileNameWithoutExtension(sourceFile);
-            string resultFileName = $"{mapName}.{sourceName}.{format}";
+            string mapName = Path.GetFileNameWithoutExtension(mapFile).Split('.')[0]; ;
+            string sourceName = Path.GetFileNameWithoutExtension(sourceFile).Split('.')[0]; ;
+            string resultFileName = $"{mapName}.{sourceName}.dotnet.{format}";
 
             // Write the result to file
             string resultFilePath = Path.Combine(resultDirectory, resultFileName);
-            await File.WriteAllTextAsync(resultFilePath, resultContent);
+            // await File.WriteAllTextAsync(resultFilePath, resultContent);
 
             Console.WriteLine($"Saved result to: {resultFilePath}");
         }
