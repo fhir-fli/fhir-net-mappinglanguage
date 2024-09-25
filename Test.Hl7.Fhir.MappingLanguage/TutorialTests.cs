@@ -124,13 +124,14 @@ namespace Test.FhirMappingLanguage
 
             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
                 source,
-                (string name, out string canonical) => {
-                    switch(name)
+                (string name, out string canonical) =>
+                {
+                    switch (name)
                     {
-                        case "TLeft1":
+                        case "TLeft":
                             canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left1";
                             return true;
-                        case "TRight1":
+                        case "TRight":
                             canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right1";
                             return true;
                     }
@@ -139,7 +140,7 @@ namespace Test.FhirMappingLanguage
             var engine = new StructureMapUtilitiesExecute(worker, null, provider);
             // var ti = provider.Provide("http://hl7.org/fhir/StructureDefinition/tutorial-left1");
 
-            var target = ElementNode.Root(provider, "TRight1");
+            var target = ElementNode.Root(provider, "TRight");
             try
             {
                 engine.transform(null, sourceNode.ToTypedElement(provider), sm1, target);
@@ -154,7 +155,7 @@ namespace Test.FhirMappingLanguage
 
 
             // Now for Step 1b
-            target = ElementNode.Root(provider, "TRight1");
+            target = ElementNode.Root(provider, "TRight");
             try
             {
                 engine.transform(null, sourceNode.ToTypedElement(provider), sm1b, target);
@@ -191,7 +192,8 @@ namespace Test.FhirMappingLanguage
 
             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
                 source,
-                (string name, out string canonical) => {
+                (string name, out string canonical) =>
+                {
                     switch (name)
                     {
                         case "TLeft":
@@ -241,7 +243,8 @@ namespace Test.FhirMappingLanguage
 
             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
                 source,
-                (string name, out string canonical) => {
+                (string name, out string canonical) =>
+                {
                     switch (name)
                     {
                         case "TLeft":
@@ -293,7 +296,8 @@ namespace Test.FhirMappingLanguage
 
             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
                 source,
-                (string name, out string canonical) => {
+                (string name, out string canonical) =>
+                {
                     switch (name)
                     {
                         case "TLeft":
@@ -343,7 +347,8 @@ namespace Test.FhirMappingLanguage
 
             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
                 source,
-                (string name, out string canonical) => {
+                (string name, out string canonical) =>
+                {
                     switch (name)
                     {
                         case "TLeft":
@@ -395,7 +400,8 @@ namespace Test.FhirMappingLanguage
 
             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
                 source,
-                (string name, out string canonical) => {
+                (string name, out string canonical) =>
+                {
                     switch (name)
                     {
                         case "TLeft":
@@ -447,7 +453,8 @@ namespace Test.FhirMappingLanguage
 
             IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
                 source,
-                (string name, out string canonical) => {
+                (string name, out string canonical) =>
+                {
                     switch (name)
                     {
                         case "TLeft":
@@ -474,5 +481,57 @@ namespace Test.FhirMappingLanguage
             // var xml2 = target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
             System.Diagnostics.Trace.WriteLine(xml2);
         }
+
+        [TestMethod]
+        public void Tutorial_Step5b()
+        {
+            var parser = new StructureMapUtilitiesParse();
+            var mapStep5 = System.IO.File.ReadAllText(@$"{mappingtutorial_folder}\maptutorial\step5\map\step5.map");
+            var sm5 = parser.parse(mapStep5, "Step5");
+            System.IO.File.WriteAllText(
+                @$"{mappingtutorial_folder}\maptutorial\step5\map\step5.xml.new",
+                _xmlSerializer.SerializeToString(sm5));
+
+            var source3 = System.IO.File.ReadAllText(@$"{mappingtutorial_folder}\maptutorial\step5\source\source5b.xml");
+            var sourceNode = FhirXmlNode.Parse(source3);
+
+            var source = new CachedResolver(new MultiResolver(
+               new DirectorySource(@$"{mappingtutorial_folder}\maptutorial\step5\logical"),
+               ZipSource.CreateValidationSource()
+               ));
+            source.Load += Source_Load;
+            var worker = new TestWorker(source);
+
+            IStructureDefinitionSummaryProvider provider = new StructureDefinitionSummaryProvider(
+                source,
+                (string name, out string canonical) =>
+                {
+                    switch (name)
+                    {
+                        case "TLeft":
+                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-left-5";
+                            return true;
+                        case "TRight":
+                            canonical = "http://hl7.org/fhir/StructureDefinition/tutorial-right-5";
+                            return true;
+                    }
+                    return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
+                });
+            var engine = new StructureMapUtilitiesExecute(worker, null, provider);
+
+            var target = ElementNode.Root(provider, "TRight");
+            try
+            {
+                engine.transform(null, sourceNode.ToTypedElement(provider), sm5, target);
+            }
+            catch (System.Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine(ex.Message);
+            }
+            var xml2 = target.ToXml(new FhirXmlSerializationSettings() { Pretty = true });
+            // var xml2 = target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
+            System.Diagnostics.Trace.WriteLine(xml2);
+        }
+
     }
 }

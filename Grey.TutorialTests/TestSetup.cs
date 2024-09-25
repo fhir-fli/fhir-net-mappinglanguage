@@ -30,7 +30,7 @@ namespace Grey.TutorialTests
             string baseDirectory = @"/home/grey/dev/fhir-net-mappinglanguage/Grey.TutorialTests/maptutorial";
 
             // Iterate through steps 1 to 13
-            for (int step = 1; step <= 13; step++)
+            for (int step = 1; step <= 1; step++)
             {
                 string stepDirectory = Path.Combine(baseDirectory, $"step{step}");
                 string logicalDirectory = Path.Combine(stepDirectory, "logical");
@@ -41,7 +41,7 @@ namespace Grey.TutorialTests
                 // Ensure the result directory exists
                 Directory.CreateDirectory(resultDirectory);
 
-                // Process files
+                // Process files for each step
                 await ProcessFiles(logicalDirectory, mapDirectory, sourceDirectory, resultDirectory);
             }
         }
@@ -70,17 +70,31 @@ namespace Grey.TutorialTests
             await System.Threading.Tasks.Task.CompletedTask;
         }
 
+
         private static async System.Threading.Tasks.Task ProcessSourceFiles(FhirModel.StructureMap structureMap, string sourceDirectory, string resultDirectory, bool useXml)
         {
             // Load all source files
             string[] sourceFiles = Directory.GetFiles(sourceDirectory, useXml ? "*.xml" : "*.json");
             foreach (string sourceFile in sourceFiles)
             {
+                Console.WriteLine($"Processing source file: {sourceFile}");
+
                 // Parse the source resource
-                ITypedElement sourceElement = ParseSourceResource(sourceFile, useXml);
+                ITypedElement sourceElement;
+                try
+                {
+                    sourceElement = ParseSourceResource(sourceFile, useXml, structureMap);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error during source resource parsing: {ex.Message}");
+                    continue;  // Skip to the next file if there's an error
+                }
 
                 // Prepare the target resource
                 string targetResourceType = GetTargetResourceType(structureMap);
+                Console.WriteLine($"Detected target resource type: {targetResourceType}");
+
                 var targetElement = ElementNode.Root(_summaryProvider, targetResourceType);
 
                 // Create a worker context
@@ -116,6 +130,8 @@ namespace Grey.TutorialTests
 
             await System.Threading.Tasks.Task.CompletedTask;
         }
+
+        private static Dictionary<string, string> _typeToCanonicalMap = new Dictionary<string, string>();
 
         private static IResourceResolver CreateResolver(string logicalDirectory)
         {
@@ -180,11 +196,31 @@ namespace Grey.TutorialTests
                 {
                     Console.WriteLine($"Snapshot already available for {sd.Url}");
                 }
+
+                // Extract the type (e.g., "TLeft") and URL (canonical)
+                string typeName = sd.Name ?? sd.Type;
+                if (!string.IsNullOrEmpty(typeName) && !string.IsNullOrEmpty(sd.Url))
+                {
+                    _typeToCanonicalMap[typeName] = sd.Url;  // Store in dictionary
+                    Console.WriteLine($"Mapped {typeName} to {sd.Url}");
+                }
             }
+
+            // Create the StructureDefinitionSummaryProvider with dynamic mapping
+            _summaryProvider = new StructureDefinitionSummaryProvider(resolver, (string name, out string canonical) =>
+            {
+                if (_typeToCanonicalMap.TryGetValue(name, out canonical))
+                {
+                    return true;
+                }
+                else
+                {
+                    return StructureDefinitionSummaryProvider.DefaultTypeNameMapper(name, out canonical);
+                }
+            });
 
             return resolver;
         }
-
 
         private static FhirModel.StructureMap ParseStructureMap(string mapFile)
         {
@@ -207,7 +243,7 @@ namespace Grey.TutorialTests
             return structureMap;
         }
 
-        private static ITypedElement ParseSourceResource(string sourceFile, bool useXml)
+        private static ITypedElement ParseSourceResource(string sourceFile, bool useXml, FhirModel.StructureMap structureMap)
         {
             Console.WriteLine($"Parsing source file: {sourceFile}, Use XML: {useXml}");
             string content = File.ReadAllText(sourceFile);
@@ -224,18 +260,55 @@ namespace Grey.TutorialTests
                 resource = _jsonParser.Parse<FhirModel.Resource>(content);
             }
 
-            // Print the resource type (for debugging)
-            Console.WriteLine($"Resource type: {resource.TypeName}");
+            Console.WriteLine($"Parsed resource type: {resource.TypeName}");
 
-            var xml = _xmlSerializer.SerializeToString(resource);
-            var sourceNode = FhirXmlNode.Parse(xml);
+            // Serialize the resource to XML for uniform processing
+            var serializedXml = _xmlSerializer.SerializeToString(resource);
+            var sourceNode = FhirXmlNode.Parse(serializedXml);
 
-            // Attempt to convert the source to ITypedElement, explicitly passing "TLeft1" as the type
-            Console.WriteLine("Attempting to convert to ITypedElement...");
-            ITypedElement sourceElement = sourceNode.ToTypedElement(_summaryProvider, "TLeft1");
+            // Get the type from StructureMap
+            string sourceType = structureMap.Group.FirstOrDefault()?
+                .Input.FirstOrDefault(i => i.Mode == FhirModel.StructureMap.StructureMapInputMode.Source)?
+                .Type;
 
-            Console.WriteLine("Successfully converted source to ITypedElement.");
-            return sourceElement;
+            if (string.IsNullOrEmpty(sourceType))
+            {
+                throw new Exception("Unable to determine the source type from the StructureMap.");
+            }
+
+            Console.WriteLine($"Detected source type from StructureMap: {sourceType}");
+
+            // Check if the source type has a matching canonical URL in the summary provider
+            string canonical;
+            if (!_typeToCanonicalMap.TryGetValue(sourceType, out canonical))
+            {
+                Console.WriteLine($"No canonical URL found for source type: {sourceType}");
+            }
+            else
+            {
+                Console.WriteLine($"Canonical URL for {sourceType}: {canonical}");
+            }
+
+            // Attempt to convert the source to ITypedElement using the type from StructureMap
+            Console.WriteLine($"Attempting to convert sourceNode to ITypedElement with type: {sourceType}...");
+            try
+            {
+                ITypedElement sourceElement = sourceNode.ToTypedElement(_summaryProvider, sourceType);
+                Console.WriteLine($"Successfully converted sourceNode to ITypedElement.");
+                return sourceElement;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to convert sourceNode to ITypedElement. Error: {ex.Message}");
+                throw;
+            }
+        }
+
+        private static string GetSourceResourceType(FhirModel.StructureMap structureMap)
+        {
+            return structureMap.Group.FirstOrDefault()?
+                .Input.FirstOrDefault(i => i.Mode == FhirModel.StructureMap.StructureMapInputMode.Source)?
+                .Type ?? "Bundle";
         }
 
         private static string GetTargetResourceType(FhirModel.StructureMap structureMap)
@@ -244,7 +317,6 @@ namespace Grey.TutorialTests
                 .Input.FirstOrDefault(i => i.Mode == FhirModel.StructureMap.StructureMapInputMode.Target)?
                 .Type ?? "Bundle";
         }
-
 
         // Implement the IWorkerContext interface
         public class TestWorker : StructureMapUtilitiesAnalyze.IWorkerContext

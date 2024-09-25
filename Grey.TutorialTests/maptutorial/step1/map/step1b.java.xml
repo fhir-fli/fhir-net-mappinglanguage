@@ -10,10 +10,10 @@
 
 // Tutorial Step 1b
 
-uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left1&quot; alias TLeft1 as source
-uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right1&quot; alias TRight1 as target
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left1&quot; alias TLeft as source
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right1&quot; alias TRight as target
 
-group tutorial(source src : TLeft1, target tgt : TRight1) {
+group tutorial(source src : TLeft, target tgt : TRight) {
   src.a -&gt; tgt.a &quot;rule_a_short&quot;;
 }
 
@@ -28,24 +28,24 @@ group tutorial(source src : TLeft1, target tgt : TRight1) {
    <structure>
       <url value="http://hl7.org/fhir/StructureDefinition/tutorial-left1"/>
       <mode value="source"/>
-      <alias value="TLeft1"/>
+      <alias value="TLeft"/>
    </structure>
    <structure>
       <url value="http://hl7.org/fhir/StructureDefinition/tutorial-right1"/>
       <mode value="target"/>
-      <alias value="TRight1"/>
+      <alias value="TRight"/>
    </structure>
    <group>
       <name value="tutorial"/>
       <typeMode value="none"/>
       <input>
          <name value="src"/>
-         <type value="TLeft1"/>
+         <type value="TLeft"/>
          <mode value="source"/>
       </input>
       <input>
          <name value="tgt"/>
-         <type value="TRight1"/>
+         <type value="TRight"/>
          <mode value="target"/>
       </input>
       <rule>
