@@ -74,8 +74,8 @@ namespace Grey.TutorialTests
                             string mapContent = File.ReadAllText(mapFile);
 
                             // Optional: Send the map content to Matchbox for conversion or do local conversion
-                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.xml", "application/fhir+xml");
-                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".java.json", "application/fhir+json");
+                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".xml", "application/fhir+xml");
+                            await ConvertWithMatchbox(httpClient, mapContent, mapFile, ".json", "application/fhir+json");
 
                             // Optional: Use local conversion
                             // ConvertWithDotNet(mapContent, mapFile);
@@ -270,7 +270,7 @@ namespace Grey.TutorialTests
             var resultContent = format == "xml" ? target.ToXml(new FhirXmlSerializationSettings() { Pretty = true }) : target.ToJson(new FhirJsonSerializationSettings() { Pretty = true });
             string mapName = Path.GetFileNameWithoutExtension(mapFile).Split('.')[0];
             string sourceName = Path.GetFileNameWithoutExtension(sourceFile).Split('.')[0];
-            string resultFileName = $"{mapName}.{sourceName}.dotnet.{format}";
+            string resultFileName = $"{mapName}.{sourceName}.{format}";
             string resultFilePath = Path.Combine(resultDirectory, resultFileName);
             await File.WriteAllTextAsync(resultFilePath, resultContent);
             Console.WriteLine($"Saved result to: {resultFilePath}");
@@ -385,7 +385,7 @@ namespace Grey.TutorialTests
                 string transformedContent = await response.Content.ReadAsStringAsync();
                 string mapName = Path.GetFileNameWithoutExtension(mapFile).Split('.')[0];
                 string sourceName = Path.GetFileNameWithoutExtension(sourceFile).Split('.')[0];
-                string resultFileName = $"{mapName}.{sourceName}.java.{format}";
+                string resultFileName = $"{mapName}.{sourceName}.{format}";
                 string resultFilePath = Path.Combine(resultDirectory, resultFileName);
                 // await File.WriteAllTextAsync(resultFilePath, transformedContent);
 
@@ -452,7 +452,7 @@ namespace Grey.TutorialTests
             try
             {
                 string xmlOutput = _xmlSerializer.SerializeToString(structureMap); // Convert to XML
-                string outputFilePath = Path.ChangeExtension(mapFilePath, ".dotnet.xml"); // Save as .dotnet.xml
+                string outputFilePath = Path.ChangeExtension(mapFilePath, ".xml"); // Save as .dotnet.xml
                 File.WriteAllText(outputFilePath, xmlOutput); // Write XML output to a file
             }
             catch (Exception ex)
@@ -467,7 +467,7 @@ namespace Grey.TutorialTests
             try
             {
                 string jsonOutput = _jsonSerializer.SerializeToString(structureMap); // Convert to JSON
-                string outputFilePath = Path.ChangeExtension(mapFilePath, ".dotnet.json"); // Save as .dotnet.json
+                string outputFilePath = Path.ChangeExtension(mapFilePath, ".json"); // Save as .dotnet.json
                 File.WriteAllText(outputFilePath, jsonOutput); // Write JSON output to a file
             }
             catch (Exception ex)
