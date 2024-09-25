@@ -3,7 +3,7 @@
   <extension url="http://hl7.org/fhir/StructureDefinition/elementdefinition-namespace">
     <valueUri value="http://hl7.org/fhir/tutorial" />
   </extension>
-  <url value="http://hl7.org/fhir/StructureDefinition/TRight" />
+  <url value="http://hl7.org/fhir/StructureDefinition/tutorial-rightinner" />
   <name value="TRightInner" />
   <status value="draft" />
   <fhirVersion value="4.0.1" />
