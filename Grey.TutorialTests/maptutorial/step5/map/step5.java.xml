@@ -1,0 +1,69 @@
+<StructureMap xmlns="http://hl7.org/fhir">
+   <id value="tutorial-step5"/>
+   <text>
+      <status value="generated"/>
+      <div xmlns="http://www.w3.org/1999/xhtml">
+         <pre>/// url = &quot;http://hl7.org/fhir/StructureMap/tutorial-step5&quot;
+/// name = &quot;tutorial-step5&quot;
+/// title = &quot;Tutorial Step 5&quot;
+/// status = &quot;draft&quot;
+
+// Tutorial Step 5
+
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-left&quot; alias TLeft as source
+uses &quot;http://hl7.org/fhir/StructureDefinition/tutorial-right&quot; alias TRight as target
+
+group tutorial(source src : TLeft, target tgt : TRight) {
+  src.a22 as a -&gt; tgt.a22 = a &quot;rule_a22&quot;;
+}
+
+</pre>
+      </div>
+   </text>
+   <url value="http://hl7.org/fhir/StructureMap/tutorial-step5"/>
+   <name value="tutorial-step5"/>
+   <title value="Tutorial Step 5"/>
+   <status value="draft"/>
+   <description value="Tutorial Step 5"/>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/tutorial-left"/>
+      <mode value="source"/>
+      <alias value="TLeft"/>
+   </structure>
+   <structure>
+      <url value="http://hl7.org/fhir/StructureDefinition/tutorial-right"/>
+      <mode value="target"/>
+      <alias value="TRight"/>
+   </structure>
+   <group>
+      <name value="tutorial"/>
+      <typeMode value="none"/>
+      <input>
+         <name value="src"/>
+         <type value="TLeft"/>
+         <mode value="source"/>
+      </input>
+      <input>
+         <name value="tgt"/>
+         <type value="TRight"/>
+         <mode value="target"/>
+      </input>
+      <rule>
+         <name value="rule_a22"/>
+         <source>
+            <context value="src"/>
+            <element value="a22"/>
+            <variable value="a"/>
+         </source>
+         <target>
+            <context value="tgt"/>
+            <contextType value="variable"/>
+            <element value="a22"/>
+            <transform value="copy"/>
+            <parameter>
+               <valueId value="a"/>
+            </parameter>
+         </target>
+      </rule>
+   </group>
+</StructureMap>
