@@ -1,11 +1,11 @@
 {
-    "resourceType": "TLeft",
-    "aa": [
-        {
-            "ab": "test"
-        },
-        {
-            "ab": "test2"
-        }
-    ]
+  "resourceType": "TLeft",
+  "aa": [
+    {
+      "ab": "test"
+    },
+    {
+      "ab": "test2"
+    }
+  ]
 }

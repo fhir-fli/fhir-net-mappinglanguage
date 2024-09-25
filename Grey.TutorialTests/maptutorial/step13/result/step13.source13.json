@@ -1,10 +1,11 @@
 {
+  "resourceType": "TRight",
   "f2": {
     "resourceType": "Basic",
-    "id": "bf558aa6e0284127a5413a443b30f924",
+    "id": "ae2a963ebcf642778923e6f992232525",
     "code": {
       "text": "test"
     }
   },
-  "ptr": "Basic/bf558aa6e0284127a5413a443b30f924"
+  "ptr": "Basic/ae2a963ebcf642778923e6f992232525"
 }

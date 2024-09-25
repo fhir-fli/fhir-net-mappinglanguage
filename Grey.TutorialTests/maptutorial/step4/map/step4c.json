@@ -42,7 +42,7 @@
               "context": "src",
               "element": "a21",
               "variable": "a",
-              "condition": "'a21.matches('[0-9]+')'"
+              "condition": "a21.matches('[0-9]+')"
             }
           ],
           "target": [
@@ -69,7 +69,7 @@
               "context": "src",
               "element": "a21",
               "variable": "a",
-              "condition": "'a21.matches('[0-9]+').not()'"
+              "condition": "a21.matches('[0-9]+').not()"
             }
           ],
           "target": [

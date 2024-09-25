@@ -1,1 +1,4 @@
-<TRight xmlns='http://hl7.org/fhir' />
+<?xml version="1.0"?>
+<TRight xmlns="http://hl7.org/fhir">
+  <a2 value="012345678901234567890012345678901234567890012345678901234567890"/>
+</TRight>

@@ -1,11 +1,10 @@
+<?xml version="1.0"?>
 <TRight xmlns="http://hl7.org/fhir">
   <f2>
     <Basic>
-      <id value="a76bc2c089b24b1a81e3b8f127aa3572" />
-      <code>
-        <text value="test" />
-      </code>
+      <id value="8f8ff1787e484eac88cec2d150f7be9a"/>
+      <code/>
     </Basic>
   </f2>
-  <ptr value="Basic/a76bc2c089b24b1a81e3b8f127aa3572" />
+  <ptr value="Basic/8f8ff1787e484eac88cec2d150f7be9a"/>
 </TRight>

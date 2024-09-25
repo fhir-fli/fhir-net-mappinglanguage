@@ -1,8 +1,9 @@
+<?xml version="1.0"?>
 <TRight xmlns="http://hl7.org/fhir">
   <aa>
-    <ab value="12345" />
+    <ab value="12345"/>
   </aa>
   <aa>
-    <ab value="6789" />
+    <ab value="6789"/>
   </aa>
 </TRight>

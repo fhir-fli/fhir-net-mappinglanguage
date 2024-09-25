@@ -35,7 +35,7 @@
         <context value="src"/>
         <element value="a2"/>
         <variable value="a"/>
-        <condition value="a2.length() &lt; 20"/>
+        <condition value="a2.length &lt;= 20"/>
       </source>
       <target>
         <context value="tgt"/>
