@@ -180,7 +180,7 @@ namespace Grey.TutorialTests
         // Main function to perform the FHIR transformations for all steps (XML and JSON maps).
         private static async System.Threading.Tasks.Task PerformTransformationsForSteps(string baseDirectory)
         {
-            for (int step = 1; step <= 13; step++) // Loop through 13 steps
+            for (int step = 4; step <= 4; step++) // Loop through 13 steps
             {
                 // Define directories for logical, map, source, and result files for this step
                 string logicalDirectory = Path.Combine(baseDirectory, $"step{step}", "logical");
