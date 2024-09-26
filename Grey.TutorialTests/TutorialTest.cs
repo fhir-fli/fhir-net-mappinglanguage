@@ -54,7 +54,7 @@ namespace Grey.TutorialTests
         // Generate the necessary files for all tutorial steps, converting maps using either Matchbox or a local .NET implementation.
         private static async System.Threading.Tasks.Task GenerateFilesForSteps(string baseDirectory, HttpClient httpClient)
         {
-            for (int step = 4; step <= 4; step++) // There are 13 steps
+            for (int step = 5; step <= 5; step++) // There are 13 steps
             {
                 // Define directories for maps and logical files for this step
                 string stepDirectory = Path.Combine(baseDirectory, $"step{step}", "map");
@@ -180,7 +180,7 @@ namespace Grey.TutorialTests
         // Main function to perform the FHIR transformations for all steps (XML and JSON maps).
         private static async System.Threading.Tasks.Task PerformTransformationsForSteps(string baseDirectory)
         {
-            for (int step = 4; step <= 4; step++) // Loop through 13 steps
+            for (int step = 5; step <= 5; step++) // Loop through 13 steps
             {
                 // Define directories for logical, map, source, and result files for this step
                 string logicalDirectory = Path.Combine(baseDirectory, $"step{step}", "logical");
